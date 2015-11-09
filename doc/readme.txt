@@ -24,7 +24,7 @@ Source schema can be:
 
 
 
-Destination Schema can be:
+Target schema can be:
 
 	    ACTIAN VectorH, Vector 
             ACTIAN Ingres 

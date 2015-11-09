@@ -1,0 +1,3 @@
+--src=oracle://localhost:1521/o112?o112&o112_pass
+--dest=vectorwise://localhost:VW/db_vectorwise?vw_user&vw_pass
+--translation=scname:O112,vw_user;iscname:o112,vw_user;rscname:o112,vw_user

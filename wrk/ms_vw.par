@@ -1,0 +1,3 @@
+--src=mssql://localhost:1433/msdb?msdb_login&msdb_pass
+--dest=vectorwise://localhost:VW/db_vectorwise?vw_user&vw_pass
+--translation=scname:dbo,vw_user;iscname:dbo,vw_user;rscname:dbo,vw_user

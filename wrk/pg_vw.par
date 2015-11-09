@@ -1,0 +1,3 @@
+--src=postgres://localhost/db_vectorwize?postgres&xpg_pass
+--dest=vectorwise://localhost:VW/db_vectorwise?vw_user&vw_pass
+--translation=scname:public,vw_user,postgres,vw_user;iscname:public,vw_user,postgres,vw_user;rscname:public,vw_user,postgres,vw_user

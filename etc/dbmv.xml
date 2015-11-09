@@ -1,0 +1,764 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<dbmv>
+
+  <teradata>
+    <select id="tbDefinition">
+      SELECT   c.DatabaseName as "scname", c.TableName as "tbname", c.ColumnName as "clname", c.ColumnType as "tyname", 
+               (CASE WHEN c.DecimalTotalDigits IS NOT NULL THEN c.DecimalTotalDigits
+                ELSE
+                   (CASE WHEN c.ColumnFormat LIKE 'X(%)' THEN Substr(c.ColumnFormat,3,(Characters(c.ColumnFormat)-3)) ELSE c.ColumnLength END)
+                END) as "precision", 
+               c.DecimalFractionalDigits as "scale", 
+               (CASE c.Nullable     WHEN 'N'      THEN 'NOT NULL'                  END)  as "isnull", 
+               (CASE WHEN c.DefaultValue IS  NOT NULL THEN  c.DefaultValue ELSE '' END) as "dfval"
+      FROM     DBC.Columns c, DBC.Tables t
+      WHERE    c.CreatorName  = USER
+      AND      c.CreatorName  = t.CreatorName
+      AND      c.DatabaseName = t.DatabaseName
+      AND      c.TableName    = t.TableName
+      AND      t.TableKind    = 'T'
+      ORDER BY 1, 2, c.ColumnId
+    </select>
+    <select id="fkDefinition">
+      SELECT ChildDB  as scname , ChildTable  as tbname,  IndexName as csname, ChildKeyColumn as clname, 
+             ParentDB as rscname, ParentTable as rtbname, ParentKeyColumn as rclname
+      FROM   DBC.All_RI_Parents
+      WHERE  CreatorName  = USER
+      ORDER BY 1,2,3,IndexID
+    </select>
+    <select id="ukDefinition">
+      SELECT DatabaseName as scname, TableName as tbname, IndexName as csname, 
+             (CASE  IndexType WHEN 'K'  THEN 'PRIMARY KEY'
+              ELSE                           'UNIQUE'
+              END) as cstype,
+             ColumnName as clname
+      FROM  DBC.indices
+      WHERE CreatorName  = USER
+      AND  IndexType  IN ('K', 'U')
+      ORDER BY 1,2,3,ColumnPosition
+    </select>
+    <select id="ixDefinition">
+      SELECT DatabaseName as scname, TableName as tbname, DatabaseName as iscname, IndexName as ixname, 
+             IndexType    as ixtype, 
+             NULL         as ixuniq,
+             ColumnName   as cname 
+      FROM  DBC.indices
+      WHERE CreatorName  = USER
+      AND  IndexType  NOT IN ('K', 'U', 'J', '1', '2')
+      AND  IndexName IS NOT NULL
+      ORDER BY 1,2,3,ColumnPosition
+    </select>
+
+    <create id="sch">
+    </create>
+    <create id="tb">
+      CREATE MULTISET TABLE "${tbname}" (
+         "${clname}"	${tyname}	${isnull} 	${dfval}
+      );
+    </create>
+    <create id="uk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	${cstype} ( ${clname} )
+    </create>
+    <create id="fk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rtbname} ( ${rclname} );
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${ixname}( ${clname} ) ON ${tbname} 
+    </create>
+  </teradata>
+
+  <oracle>
+    <select id="tbDefinition">
+      SELECT   c.owner as "scname", c.table_name as "tbname", c.column_name as "clname", 
+               (CASE 
+                   WHEN c.data_type IN ('NUMERIC', 'NUMBER', 'DECIMAL') 
+                        AND c.data_precision IS NULL AND c.data_scale IS NULL 
+                      THEN 'INTEGER'
+                   WHEN c.data_type IN ('FLOAT') AND c.data_precision &gt;= 10  AND c.data_precision &lt; 20
+                      THEN 'BINARY_DOUBLE'      
+                   WHEN c.data_type IN ('FLOAT') AND c.data_precision &lt; 10 
+                      THEN 'BINARY_FLOAT'      
+                   WHEN c.data_type LIKE 'TIMESTAMP%'
+                      THEN REGEXP_REPLACE(c.data_type, '\([0-9]+\)', '%')
+                ELSE 
+                   c.data_type
+                END) as "tyname", 
+               NVL(c.data_precision, c.data_length)            as "precision", 
+               NVL(c.data_scale,0)                             as "scale", 
+               DECODE(c.nullable, 'N', 'NOT NULL', 'Y', NULL)  as "isnull", 
+               c.data_default as "dfval"
+      FROM     all_tab_columns c, all_tables t
+      WHERE    c.owner      = USER
+      AND      c.owner      = t.owner
+      AND      c.table_name = t.table_name
+      AND      t.secondary  = 'N'
+      AND      t.nested     = 'NO'
+      ORDER BY 1, 2, c.column_id
+    </select>
+    <select id="fkDefinition">
+      SELECT cl1.owner  as scname, cl1.table_name  as tbname, cl1.constraint_name as csname, cl1.column_name as clname, 
+             cl2.owner as rscname, cl2.table_name as rtbname, cl2.column_name as rclname
+      FROM   all_constraints cs, all_cons_columns cl1, all_cons_columns cl2
+      WHERE  cs.owner             = USER
+      AND    cs.constraint_type   = 'R'
+      AND    cs.owner             = cl1.owner 
+      AND    cs.table_name        = cl1.table_name
+      AND    cs.constraint_name   = cl1.constraint_name
+      AND    cs.r_owner           = cl2.owner
+      AND    cs.r_constraint_name = cl2.constraint_name
+      AND    cl1.position         = cl2.position
+      ORDER BY 1, 2, 3, cl1.position
+    </select>
+    <select id="ukDefinition">
+      SELECT cs.owner as scname, cs.table_name as tbname, cs.constraint_name as csname, 
+             (CASE  cs.constraint_type WHEN 'P'  THEN 'PRIMARY KEY'
+              ELSE                                    'UNIQUE'
+              END) as cstype,
+              cl.column_name as clname
+      FROM  all_constraints cs, all_cons_columns cl 
+      WHERE cs.owner            = USER
+      AND   cs.constraint_type IN ('P', 'U')
+      AND   cs.constraint_name NOT LIKE 'BIN$%==%'
+      AND   cs.owner           = cl.owner
+      AND   cs.constraint_name = cl.constraint_name
+      AND   cs.table_name      = cl.table_name
+      ORDER BY 1, 2, 3, cl.position
+    </select>
+    <select id="ixDefinition">
+      SELECT ix.table_owner as scname, ix.table_name as tbname, ix.owner as iscname, ix.index_name as ixname, 
+             CASE  WHEN ix.index_type IN ('NORMAL', 'BITMAP') THEN 'BTREE' ELSE CAST(ix.index_type AS VARCHAR(2))  END as ixtype, 
+             DECODE(ix.uniqueness, 'UNIQUE', 'UNIQUE')  as ixuniq,
+             id.column_name   as cname 
+      FROM  all_indexes ix, all_ind_columns id
+      WHERE ix.owner      = USER
+      AND   ix.owner      = id.index_owner
+      AND   ix.index_name = id.index_name
+      AND   ix.table_owner= id.table_owner
+      AND   ix.table_name = id.table_name 
+      AND   ix.index_name NOT LIKE 'BIN$%==%'
+      AND   ix.index_name NOT IN ( 
+               SELECT constraint_name FROM all_constraints cs
+               WHERE cs.owner      = ix.owner
+               AND   cs.table_name = ix.table_name
+               AND   cs.constraint_type IN ('P', 'U', 'R')
+               )
+      ORDER BY 1,2,3,id.column_position
+    </select>
+
+    <create id="sch">
+    </create>
+    <create id="tb">
+      CREATE MULTISET TABLE "${tbname}" (
+         "${clname}"	${tyname}	${isnull} 	${dfval}
+      );
+    </create>
+    <create id="uk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	${cstype} ( ${clname} )
+    </create>
+    <create id="fk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rtbname} ( ${rclname} );
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${ixname}( ${clname} ) ON ${tbname} 
+    </create>
+  </oracle>
+
+  <asa>
+    <select id="tbDefinition">
+      SELECT   suser_name() as "scname", t.table_name as "tbname", c.column_name as "clname", d.domain_name as "tyname", 
+               c.width as "precision", c.scale as "scale", 
+               CASE  WHEN c.nulls = 'N' THEN 'NOT NULL'   END CASE as "isnull", 
+               CASE  WHEN c.[default]  IS NOT NULL THEN  'DEFAULT ' || c.[default]  END CASE as "dfval"
+      FROM     systab t, systabcol c, sysdomain d
+      WHERE    t.creator  = suser_id()
+      AND      t.table_id = c.table_id
+      AND      c.domain_id= d.domain_id
+      ORDER BY 1, 2, c.column_id
+    </select>
+    <select id="fkDefinition">
+    </select>
+    <select id="ukDefinition">
+    </select>
+    <select id="ixDefinition">
+    </select>
+  </asa>
+
+  <mysql>
+    <select id="tbDefinition">
+      SELECT c.table_schema as "scname", c.table_name as "tbname", c.column_name as "clname", c.data_type as "tyname",
+             IF(LOWER(c.data_type) LIKE '%CHAR%', character_maximum_length, c.numeric_precision) as "precision", 
+             c.numeric_scale as "scale",
+             IF(c.is_nullable = 'YES', '', 'NOT NULL') as "isnull",
+             IF(c.column_default IS NOT NULL, IF (c.data_type LIKE '%char%', QUOTE(c.column_default), c.column_default), NULL) as "defval"
+      FROM   information_schema.columns c
+      WHERE  c.table_schema IN (SELECT db FROM information_schema.processlist)
+      ORDER BY c.table_schema, c.table_name, c.ordinal_position
+    </select>
+    <select id="fkDefinition">
+      SELECT table_schema as scname , table_name  as tbname,  constraint_name as csname, column_name as clname, 
+             referenced_table_schema as rscname, referenced_table_name as rtbname, referenced_column_name as rclname
+      FROM   information_schema.key_column_usage
+      WHERE  table_schema IN (SELECT db FROM information_schema.processlist)
+      AND    position_in_unique_constraint IS NOT NULL
+      ORDER BY 1,2,3,ordinal_position
+    </select>   
+    <select id="ukDefinition">
+      SELECT table_schema as scname, table_name as tbname,
+             (CASE
+                WHEN constraint_name = 'PRIMARY'   THEN CONCAT('pk_', table_name)
+                WHEN constraint_name = column_name THEN CONCAT(CONCAT('uk_', table_name), column_name)
+                ELSE constraint_name
+             END) as csname,
+             (CASE constraint_name WHEN 'PRIMARY' THEN 'PRIMARY KEY' ELSE 'UNIQUE' END) as cstype,
+             column_name as clname
+       FROM  information_schema.key_column_usage
+       WHERE table_schema IN (SELECT db FROM information_schema.processlist)
+       AND   position_in_unique_constraint IS NULL
+       ORDER BY 1,2,3,ordinal_position
+    </select>
+    <select id="ixDefinition">
+      SELECT table_schema as scname, table_name as tbname, index_schema as iscname, index_name as ixname, 
+             index_type   as ixtype, 
+             NULL         as ixuniq,
+             column_name  as cname 
+      FROM  information_schema.statistics
+      WHERE table_schema IN (SELECT db FROM information_schema.processlist)
+      AND   non_unique = 1
+      ORDER BY 1,2,3,seq_in_index
+    </select>
+
+    <create id="sch">
+      CREATE DATABASE ${scname} CHARACTER SET = utf8
+    </create>
+    <create id="tb">
+      CREATE TABLE ${scname}.${tbname} (
+         ${clname}	${tyname}	${isnull}	
+      );
+    </create>
+    <create id="uk">
+      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+    </create>
+    <create id="fk">
+      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rscname}.${rtbname} ( ${rclname} );
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${ixname} ON ${scname}.${tbname} ( ${clname} )
+    </create>
+  </mysql>
+
+  <db2>
+    <select id="tbDefinition">
+      SELECT t.creator as scname, t.name as tbname, c.name as clname, 
+             CASE 
+                WHEN c.coltype IN ('NUMERIC', 'DECIMAL') AND c.length &lt; 10 AND c.scale = 0                      THEN 'INTEGER'
+                WHEN c.coltype IN ('NUMERIC', 'DECIMAL') AND c.length &gt;=10 AND c.length &lt; 18 AND c.scale = 0 THEN 'BIGINT'
+                ELSE c.coltype
+             END as  tyname,
+             c.length as precision, 
+             c.scale,
+             CASE WHEN c.nulls = 'N' THEN 'NOT NULL' END as isnull, 
+             CASE WHEN c.default != '' THEN c.default END as defval
+      FROM   sysibm.systables t, sysibm.syscolumns c
+      WHERE  t.creator = c.tbcreator
+      AND    t.name    = c.tbname
+      AND    t.creator NOT IN ('SYSCAT','SYSIBM','SYSIBMADM','SYSSTAT','SYSTOOLS')
+      ORDER BY scname, tbname, colno
+    </select>
+
+    <select id="fkDefinition">
+      SELECT r.creator as scname, r.tbname as tbname, r.relname as csname, k1.colname as clname,
+             r.reftbcreator as rscname, k2.tbname as rtbname, k2.colname as rclname
+      FROM   sysibm.sysrels r, sysibm.syskeycoluse k1, sysibm.syskeycoluse k2
+      WHERE  r.creator      = k1.tbcreator
+      AND    r.tbname       = k1.tbname 
+      AND    r.relname      = k1.constname
+      AND    r.reftbcreator = k2.tbcreator
+      AND    r.reftbname    = k2.tbname
+      AND    r.refkeyname   = k2.constname
+      AND    k1.colseq      = k2.colseq
+      AND    r.creator NOT IN ('SYSCAT','SYSIBM','SYSIBMADM','SYSSTAT','SYSTOOLS')
+      ORDER BY 1,2,3,k1.colseq
+    </select>
+    <select id="ukDefinition">
+      SELECT i.tbcreator as scname, i.tbname as tbname, i.name  as csname,
+             CASE 
+                WHEN i.uniquerule IN ('U') THEN 'UNIQUE'
+                WHEN i.uniquerule IN ('P') THEN 'PRIMARY KEY'
+             END as cstype, k.colname as clname
+      FROM   sysibm.sysindexes i, sysibm.syskeycoluse k
+      WHERE  i.creator = k.tbcreator
+      AND    i.tbname  = k.tbname
+      AND    i.creator NOT IN ('SYSCAT','SYSIBM','SYSIBMADM','SYSSTAT','SYSTOOLS')
+      AND    i.uniquerule IN ('U','P')
+      ORDER BY 1,2,3,k.colseq
+    </select>
+    <select id="ixDefinition">
+     SELECT i.tbcreator as scname, i.tbname as tbname, i.creator as iscname, i.name as ixname,
+             'BTREE'    as ixtype,
+             NULL       as ixuniq,
+             k.colname  as cname
+      FROM   sysibm.sysindexes i, sysibm.syskeycoluse k
+      WHERE  i.creator = k.tbcreator
+      AND    i.tbname  = k.tbname
+      AND    i.creator    NOT IN ('SYSCAT','SYSIBM','SYSIBMADM','SYSSTAT','SYSTOOLS')
+      AND    i.uniquerule NOT IN ('U','P')
+      ORDER BY 1,2,3,k.colseq
+    </select>
+
+    <create id="sch">
+      CREATE DATABASE ${scname};
+    </create>
+    <create id="tb">
+      CREATE TABLE "${tbname}" (
+         "${clname}"	${tyname}	${isnull}	${dfval}
+      )
+    </create>
+    <create id="uk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+    </create>
+    <create id="fk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rtbname} ( ${rclname} );
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
+    </create>
+  </db2>
+
+  <mssql>
+    <select id="tbDefinition">
+      SELECT s.name as scname, o.name as tbname, c.name as clname, t.name as  tyname, 
+             c.prec as precision, c.scale, 
+             CASE  WHEN c.isnullable = 0 THEN 'NOT NULL'   END as isnull, 
+             CASE  WHEN c.cdefault  != 0 THEN  (SELECT text FROM syscomments WHERE id = c.cdefault)  END as dfval
+      FROM   sys.objects o, syscolumns c, systypes t, sys.schemas s
+      WHERE  o.object_id    = c.id
+      AND    o.schema_id = s.schema_id
+      AND    o.type  = 'U'
+      AND    c.xtype = t.xtype
+      AND    user_name(t.uid) = 'sys'
+      AND    t.name NOT IN ('sysname', 'SQL_VARIANT', 'IMAGE', 'BITEA')
+      ORDER BY s.name, o.name, c.colid
+    </select>
+    <select id="fkDefinition">
+      SELECT s1.name as scname, o1.name as tbname, o2.name as csname, c1.name as clname, 
+             s2.name rscname, o3.name as rtbname, c2.name as rclname
+      FROM   sys.schemas s1, sys.objects o1, sysobjects o2, sysforeignkeys f, 
+             syscolumns c1, syscolumns c2, sys.schemas s2, sys.objects o3 
+      WHERE  o1.schema_id = s1.schema_id
+      AND    o1.object_id = o2.parent_obj
+      AND    o2.xtype     = 'F'
+      AND    f.constid    = o2.id
+      AND    f.fkeyid     = c1.id
+      AND    f.fkey       = c1.colid 
+      AND    f.rkeyid     = c2.id
+      AND    f.rkey       = c2.colid
+      AND    f.rkeyid     = o3.object_id
+      AND    o3.schema_id = s2.schema_id
+      ORDER BY 1,2,3,f.keyno
+    </select>
+    <select id="ukDefinition">
+      SELECT s.name as scname, o1.name as tbname, o2.name as csname, 
+             CASE  o2.xtype WHEN 'PK'  THEN 'PRIMARY KEY'
+                            WHEN 'UQ'  THEN 'UNIQUE'
+             END as cstype,
+             c.name as clname
+      FROM   sys.schemas s, sys.objects o1, sysobjects o2, sysindexes i, sysindexkeys ik, syscolumns c
+      WHERE  o1.schema_id = s.schema_id
+      AND    o1.object_id = o2.parent_obj
+      AND    o1.object_id = i.id
+      AND    o2.name      = i.name
+      AND    i.id         = ik.id
+      AND    i.indid      = ik.indid
+      AND    ik.id        = c.id
+      AND    ik.colid     = c.colid
+      AND    o2.xtype  IN ('PK','UQ')
+      ORDER BY 1,2,3,ik.keyno
+    </select>
+    <select id="ixDefinition">
+      SELECT s.name as scname, o1.name as tbname, s.name as iscname, i.name as ixname, 
+             CASE  WHEN i.type      = 2 THEN 'BTREE' ELSE CAST(i.type AS VARCHAR(2))  END as ixtype, 
+             CASE  WHEN i.is_unique = 1 THEN 'UNIQUE'                                 END as ixuniq,
+                c.name as cname
+      FROM   sys.schemas s, sys.objects o1,  sys.indexes i, sysindexkeys ik, syscolumns c
+      WHERE  o1.schema_id            = s.schema_id
+      AND    o1.type                 = 'U' 
+      AND    o1.object_id            = i.object_id
+      AND    i.is_primary_key       != 1
+      AND    i.is_unique_constraint != 1 
+      AND    i.index_id              = ik.indid
+      AND    i.object_id             = ik.id
+      AND    ik.id                   = c.id
+      AND    ik.colid                = c.colid
+      ORDER BY 1,2,3, ik.keyno
+    </select>
+   </mssql>
+
+  <netezza>
+    <create id="sch">
+      CREATE DATABASE ${scname};
+    </create>
+    <create id="tb">
+      CREATE TABLE ${tbname} (
+         ${clname}	${tyname}	${isnull} 	${dfval}
+      );
+    </create>
+    <create id="uk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+    </create>
+    <create id="fk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rtbname} ( ${rclname} );
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} );
+    </create>
+  </netezza>
+
+   <postgres>
+      <select id="tbDefinition">
+         SELECT c.table_schema as "scname", 
+                c.table_name as "tbname", c.column_name as "clname", 
+                CASE WHEN c.data_type = 'numeric' AND c.numeric_precision IS NULL THEN 'DOUBLE PRECISION' ELSE c.data_type  END as "tyname",
+                CASE WHEN LOWER(c.data_type) LIKE '%char%' THEN character_maximum_length ELSE c.numeric_precision END as "precision", 
+                c.numeric_scale as "scale",
+                CASE WHEN c.is_nullable = 'YES' THEN '' ELSE 'NOT NULL' END as "isnull",
+                CASE WHEN c.column_default IS NOT NULL 
+                THEN 
+                   CASE WHEN LOWER(c.column_default) LIKE '%char%'   THEN substring(c.column_default from '(.*)::.*char.*')
+                        WHEN LOWER(c.column_default) LIKE '%text%'   THEN substring(c.column_default from '(.*)::.*text.*') 
+                        WHEN LOWER(c.column_default) LIKE 'nextval%' THEN NULL 
+                        WHEN LOWER(c.column_default) =    'now()'    THEN 'current_timestamp' 
+                   ELSE c.column_default END
+                 ELSE 
+                    NULL
+                 END as "defval"
+         FROM   information_schema.columns c
+         WHERE  c.table_schema NOT IN ( 'information_schema', 'pg_catalog')
+         AND    c.table_catalog = current_database()
+         AND    c.table_name IN ( SELECT table_name FROM information_schema.tables WHERE table_type IN ('BASE TABLE', 'LOCAL TEMPORARY') )
+         ORDER BY c.table_schema, c.table_name, c.ordinal_position
+    </select>
+    <select id="fkDefinition">
+       SELECT CASE WHEN k1.table_schema = 'public' THEN current_user ELSE k1.table_schema END as "scname",
+              k1.table_name  as "tbname",  k1.constraint_name as "csname", k1.column_name as "clname", 
+              CASE WHEN k2.table_schema = 'public' THEN current_user ELSE k2.table_schema END as "rscname", 
+              k2.table_name as rtbname, k2.column_name as rclname
+       FROM   information_schema.key_column_usage k1,
+              information_schema.key_column_usage k2,
+              information_schema.referential_constraints r
+       WHERE  k1.table_schema NOT IN ( 'information_schema', 'pg_catalog') 
+       AND    k1.table_catalog                 = current_database()
+       AND    k1.table_name       IN ( SELECT table_name FROM information_schema.tables WHERE table_type IN ('BASE TABLE', 'LOCAL TEMPORARY') )
+       AND    k1.table_catalog                 = k2.table_catalog
+       AND    k1.table_catalog                 = r.constraint_catalog
+       AND    k1.position_in_unique_constraint = k2.ordinal_position
+       AND    K1.constraint_name               = r.constraint_name
+       AND    r.unique_constraint_name         = K2.constraint_name
+       AND    k1.position_in_unique_constraint IS NOT NULL
+       ORDER BY 1, 2, 3, k1.ordinal_position
+    </select>   
+    <select id="ukDefinition">
+       SELECT CASE WHEN k.table_schema = 'public' THEN current_user ELSE k.table_schema END as "scname", 
+              k.table_name as tbname,
+             (CASE
+                WHEN k.constraint_name IN ('PRIMARY', 'PRIMARY KEY') AND c.constraint_type = 'PRIMARY KEY' 
+                   THEN CONCAT('pk_', k.table_name)
+                WHEN c.constraint_type = k.column_name               
+                   THEN CONCAT(CONCAT('uk_', k.table_name), k.column_name)
+                ELSE k.constraint_name
+             END) as csname,
+             c.constraint_type as cstype,
+             k.column_name as clname
+        FROM  information_schema.key_column_usage k,
+             information_schema.table_constraints c
+        WHERE k.table_schema NOT IN ( 'information_schema', 'pg_catalog')
+        AND   k.table_catalog   = current_database()
+        AND   k.table_name        IN ( SELECT table_name FROM information_schema.tables WHERE table_type IN ('BASE TABLE', 'LOCAL TEMPORARY') )
+        AND   k.table_schema    = c.table_schema
+        AND   k.table_name      = c.table_name
+        AND   k.constraint_name = c.constraint_name
+        AND   k.position_in_unique_constraint IS NULL
+        ORDER BY 1, 2, 3, k.ordinal_position
+    </select>
+    <select id="ixDefinition">
+       SELECT CASE WHEN tsh.nspname = 'public' THEN current_user ELSE tsh.nspname END as "scname", 
+              t.relname  as tbname, 
+              CASE WHEN ish.nspname = 'public' THEN current_user ELSE ish.nspname END as "iscname", 
+              i.relname   as ixname,
+              'BTREE'     as ixtype,
+              NULL        as ixuniq,
+              a.attname   as cname
+       FROM  pg_namespace tsh, pg_class t, pg_class i, pg_namespace ish, pg_index ix, pg_attribute a
+       WHERE t.relnamespace  = tsh.oid
+       AND   t.relkind       = 'r'
+       AND   t.oid           = ix.indrelid
+       AND   ix.indisunique  = 'f'
+       AND   ix.indisprimary = 'f'
+       AND   ix.indexrelid   = i.oid
+       AND   i.relnamespace  = ish.oid
+       AND   a.attrelid      = i.oid
+       AND   a.attnum        = ANY(ix.indkey)
+       ORDER BY 1,2,3, a.attnum
+    </select>
+    <create id="sch">
+      CREATE DATABASE ${scname};
+    </create>
+    <create id="tb">
+      CREATE TABLE ${tbname} (
+         ${clname}	${tyname}	${isnull} 	${dfval}
+      );
+    </create>
+    <create id="uk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+    </create>
+    <create id="fk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rtbname} ( ${rclname} );
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
+    </create>
+  </postgres>
+
+  <greenplum>
+    <create id="sch">
+      create database ${scname};
+    </create>
+    <create id="tb">
+      CREATE TABLE ${tbname} (
+         ${clname}	${tyname}	${isnull} 	${dfval}
+      ) DISTRIBUTED RANDOMLY;
+    </create>
+    <create id="uk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+    </create>
+    <create id="fk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rtbname} ( ${rclname} );
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
+    </create>
+  </greenplum>
+
+  <progress>
+    <create id="sch">
+      
+    </create>
+    <create id="tb">
+      CREATE TABLE ${tbname} (
+         ${clname}	${tyname}	${isnull} 	${dfval}
+      )
+    </create>
+    <create id="uk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+    </create>
+    <create id="fk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rtbname} ( ${rclname} );
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
+    </create>
+  </progress>
+
+  <maxdb>
+    <create id="sch">
+     --
+    </create>
+    <create id="tb">
+      CREATE TABLE ${tbname} (
+         "${clname}"	${tyname}	${isnull} 	${dfval}
+      )
+    </create>
+    <create id="uk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+    </create>
+    <create id="fk">
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rtbname} ( ${rclname} )
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
+    </create>
+  </maxdb>
+
+  <hana>
+    <create id="sch">
+    </create>
+    <create id="tb">
+      CREATE TABLE ${scname}.${tbname} (
+         ${clname}	${tyname}	${isnull} 	${dfval}
+      )
+    </create>
+    <create id="uk">
+      ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+    </create>
+    <create id="fk">
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${iscname}.${ixname} ON ${scname}.${tbname} ( ${clname} )
+    </create>
+  </hana>
+
+   <iq>
+    <select id="tbDefinition">
+      SELECT USER as "scname", t.table_name as "tbname", c.column_name as "clname", d.domain_name as "tyname",
+             c.width as "precision", 
+             c.scale as "scale",
+             (CASE WHEN c.nulls = 'N' THEN 'NOT NULL' ELSE null END) as "isnull",
+             c.[default] as "defval"
+      FROM   sys.systable t, sys.syscolumn c, sys.sysdomain d
+      WHERE  t.creator    = user_id(USER)
+      AND    t.table_type = 'BASE'
+      AND    t.table_id   = c.table_id
+      AND    c.domain_id  = d.domain_id
+      ORDER BY 1, 2, c.column_id
+    </select>
+    <select id="fkDefinition">
+      SELECT USER as scname , t1.table_name  as tbname,  f.role as csname, c1.column_name as clname, 
+             suser_name(t2.creator) as rscname, t2.table_name as rtbname, c2.column_name as rclname
+      FROM   sys.systable t1, sys.sysforeignkey f, sys.sysfkcol fc, sys.syscolumn c1, sys.syscolumn c2, sys.systable t2
+      WHERE  t1.creator          = user_id(USER)
+      AND    t1.table_id         = f.foreign_table_id
+      AND    f.foreign_table_id  = fc.foreign_table_id
+      AND    f.foreign_key_id    = fc.foreign_key_id
+      AND    fc.foreign_table_id = c1.table_id
+      AND    fc.foreign_column_id= c1.column_id
+      AND    f.primary_table_id  = c2.table_id
+      AND    fc.primary_column_id= c2.column_id
+      AND    t2.table_id         = f.primary_table_id
+      ORDER BY 1, 2, 3, fc.foreign_column_id
+    </select>   
+    <select id="ukDefinition">
+      SELECT USER as scname, t.table_name as tbname,
+             (CASE 
+                WHEN i.index_name = t.table_name    THEN 'pk_'||LOWER(t.table_name)
+                WHEN i.index_name LIKE '% UNIQUE %' THEN 'uk_'||LOWER(t.table_name)
+                ELSE cs.constraint_name
+              END) as csname,
+             (CASE cs.constraint_type WHEN 'P' THEN 'PRIMARY KEY' ELSE 'UNIQUE' END) as cstype,
+             c.column_name as clname
+       FROM  sys.systable t, sys.sysconstraint cs, sys.sysidx i, sys.sysidxcol cx, sys.syscolumn c
+       WHERE t.creator     = user_id(USER)
+       AND   t.object_id   = cs.table_object_id
+       AND   cs.constraint_type in ('P', 'U')
+       AND   i.table_id    = t.table_id
+       AND   i.object_id   = cs.ref_object_id 
+       AND   cx.table_id   = t.table_id
+       AND   cx.index_id   = i.index_id
+       AND   c.table_id    = t.table_id
+       AND   c.column_id   = cx.column_id
+       ORDER BY 1,2,3, cx.sequence
+    </select>
+    <select id="ixDefinition">
+      SELECT USER as scname, t.table_name as tbname, USER as iscname, i.index_name as ixname, 
+             'BTREE'      as ixtype, 
+             NULL         as ixuniq,
+             column_name  as cname 
+      FROM  sys.systable t, sys.sysidx i, sys.sysidxcol cx, sys.syscolumn c
+      WHERE t.creator  = user_id(USER)
+      AND   i.table_id = t.table_id
+      AND   i.object_id not IN (SELECT ref_object_id 
+                                 FROM   sys.sysconstraint 
+                                 WHERE  constraint_type IN ('P','U')
+                                 AND    table_object_id = t.object_id )
+      AND   i.index_name NOT LIKE 'ASIQ_IDX_%'
+      AND   cx.table_id = t.table_id
+      AND   cx.index_id = i.index_id
+      AND   c.table_id  = t.table_id
+      AND   c.column_id = cx.column_id
+      ORDER BY 1,2,3,cx.sequence
+    </select>
+
+    <create id="sch">
+    </create>
+    <create id="tb">
+      CREATE TABLE ${scname}.${tbname} (
+         ${clname}	${tyname}	${isnull} 	${dfval}
+      )
+    </create>
+    <create id="uk">
+      ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+    </create>
+    <create id="fk">
+      ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rscname}.${rtbname} ( ${rclname} )
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${iscname}.${ixname} ON ${scname}.${tbname} ( ${clname} )
+    </create>
+   </iq>  
+
+
+   <ase>
+       <create id="sch">
+       </create>
+       <create id="tb">
+         CREATE TABLE ${scname}.${tbname} (
+            ${clname}	${tyname}	${isnull} 	${dfval}
+         )
+      </create>
+      <create id="uk">
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+      </create>
+      <create id="fk">
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rscname}.${rtbname} ( ${rclname} )
+      </create>
+      <create id="ix">
+         CREATE ${ixuniq} INDEX ${iscname}.${ixname} ON ${scname}.${tbname} ( ${clname} )
+      </create>
+   </ase>  
+   
+  
+   <vectorwise>
+      <create id="sch">
+         COMMIT;
+         SET SESSION AUTHORIZATION ${scname}
+      </create>
+      <create id="tb">
+         CREATE TABLE ${scname}.${tbname} (
+            ${clname}	${tyname}	${isnull} 	${dfval}
+         )
+       </create>
+      <create id="uk">
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} )
+      </create>
+      <create id="fk">
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+         REFERENCES ${rscname}.${rtbname} ( ${rclname} )
+      </create>
+      <create id="ix">
+      </create>
+      <load id="cmd">
+         vwload --table "${scname}.${tbname}" --fdelim "${fdelim}" --quote "'" ${dbname} ${fname}
+      </load>
+   </vectorwise>
+
+  <ingres>
+    <create id="sch">
+    </create>
+    <create id="tb">
+      CREATE TABLE ${tbname} (
+         ${clname}	${tyname}	${isnull} 	${dfval}
+      ) with nojournaling
+    </create>
+    <create id="uk">
+      ALTER TABLE ${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+    </create>
+    <create id="fk">
+      ALTER TABLE ${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rtbname} ( ${rclname} )
+    </create>
+    <create id="ix">
+      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
+    </create>
+  </ingres>
+
+</dbmv>
+

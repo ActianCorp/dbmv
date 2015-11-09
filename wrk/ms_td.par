@@ -1,0 +1,3 @@
+--src=mssql-odbc://localhost:1433/msdb?msdb_login&msdb_pass
+--dest=teradata://tdsystem:1505/td_db?tduser&tdpass
+--translation=scname:dbo,tduser;iscname:dbo,tduser;rscname:dbo,tduser

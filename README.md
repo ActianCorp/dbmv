@@ -8,8 +8,8 @@ dbmv.py helps you to move one database schema to another database
 Source schema can be:
 
 
-	    ORACLE Mysql 
-	    MICROSOFT SqlServer 
+	    ORACLE Mysql
+	    MICROSOFT SqlServer
 	    ORACLE
 	    POSTGRES
 	    SAP Sybase IQ (V15+)
@@ -24,9 +24,9 @@ Source schema can be:
 
 Target schema can be:
 
-	    ACTIAN VectorH, Vector 
-            ACTIAN Ingres 
-	    EMC Greenplum 
+	    ACTIAN VectorH, Vector
+            ACTIAN Ingres
+	    EMC Greenplum
             IBM Netezza (UDB, not sure about iseries and Zos)
             IBM Netezza (4.xx ?)
 	    ORACLE Mysql

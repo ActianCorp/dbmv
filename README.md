@@ -57,9 +57,9 @@ $ ./dbmv.py
    
    dest   : Destination database (--src=URL)
 
-   URL : <database provider>[-odbc]://<database hostname>[:port]/<database name>?<database login>&<login password>
+   URL : db_driver[-odbc]://db_host[:port]/dbname?db_login&login_password
    
-          profiler list:
+          db_driver list:
 
 	    ACTIAN VectorH, Vector -> vectorwise
             ACTIAN Ingres          -> ingres

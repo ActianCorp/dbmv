@@ -13,33 +13,34 @@ Source schema can be:
 	    ORACLE
 	    POSTGRES
 	    SAP Sybase IQ (V15+)
-            TERADATA
+	    TERADATA
 	
-	Schema description can be easily extended to any database in the destination list.
+	
+	Schema description can be easily extended to any database in the destination list. 
 	You need to add missing description for "tbDefinition", etc, ... in file "dbmx.xml".
-        SQL output, field names, SELECT descriptions must be respect the pattern used 
-	for other existing databases
+	SQL output, field names, SELECT descriptions must be respect the pattern used 
+	for other existing databases.
 
 
 
 Target schema can be:
 
 	    ACTIAN VectorH, Vector
-            ACTIAN Ingres
+	    ACTIAN Ingres
 	    EMC Greenplum
-            IBM Netezza (UDB, not sure about iseries and Zos)
+	    IBM Netezza (UDB, not sure about iseries and Zos)
             IBM Netezza (4.xx ?)
-	    ORACLE Mysql
+            ORACLE Mysql
 	    MICROSOFT SqlServer
 	    ORACLE
 	    POSTGRES
             PROGRESS Database
-	    SAP Sybase IQ (V15+)
+            SAP Sybase IQ (V15+)
 	    SAP Sybase ASA (Anywhere)
 	    SAP Sybase ASE
 	    SAP Hana
 	    SAP MaxDB
-            TERADATA
+	    TERADATA
 
 	
 
@@ -48,20 +49,22 @@ Without parameters dbmv.py diplays a simple help about parameters
 $ ./dbmv.py 
 
    Usage : 
-     ['src=', 'dest=', 'loadata', 'cretab', 'creall', 'loaddl', 'parfile=', 'fdelim=', 'unload', 'translation=', 'quote=', 'cmdsep=']
+     ['src=', 'dest=', 'loadata', 'cretab', 'creall', 'loaddl', 'parfile=', 'fdelim=', 
+     'unload', 'translation=', 'quote=', 'cmdsep=']
 
 
-   src    : Source database (--src=URL)
+   src    : Source database      (--src=URL)
+   
    dest   : Destination database (--src=URL)
 
-    URL : <database provider>[-odbc]://<database hostname>[:port]/<database name>?<database login>&<login password>
-
+   URL : <database provider>[-odbc]://<database hostname>[:port]/<database name>?<database login>&<login password>
+   
           profiler list:
 
 	    ACTIAN VectorH, Vector -> vectorwise
             ACTIAN Ingres          -> ingres
 	    EMC Greenplum          -> greenplum
-            IBM Netezza            -> netezza
+	    IBM Netezza            -> netezza
 	    ORACLE Mysql           -> mysql
 	    MICROSOFT SqlServer    -> mssql
 	    ORACLE                 -> oracle
@@ -75,16 +78,11 @@ $ ./dbmv.py
             TERADATA               -> teradata
 
 
-            About ODBC : 
-
-           Linux database drivers path and configuration must be added in file 
-           "../etc/driverTools.xml" (see in-file examples)
-           In Window systems, ODBC drivers and Datasource must exist. No additional configuration is required.
-
-	       Supported python ODBC => pyodbc
-
-
-
+            About ODBC : Linux database drivers path and configuration must be added in file 
+            
+            "../etc/driverTools.xml" (see in-file examples)
+            
+           (On Window systems, ODBC drivers and Datasource must exist. No additional configuration is required).
 
    cretab : Switch to Create tables only
    creall : Switch to all objects TABLES, INDEXES, PRIMARY KEYS, REFERENTIAL CONSTRAINTS
@@ -94,7 +92,8 @@ $ ./dbmv.py
    parfile: All parameters can be stored is a parfile. Parfiles examples can be find in the "wrk" directory. 
 
    translation : Schema-name translation for table, constraints, indexes
-          Ex: --translation=scname:public,vw_user,postgres,vw_user;iscname:public,vw_user,postgres,vw_user;rscname:public,vw_user,postgres,vw_user
+   (Ex: --translation=scname:public,vw_user,postgres,vw_user;iscname:public,vw_user,postgres,vw_user;rscname:public,vw_user,postgres,vw_user)
+   
                  
    		   scname : Tables owned by "public" are moved to schema "vw_user"
                                             "postgres"                   "vw_user"
@@ -115,8 +114,6 @@ $ ./dbmv.py
                     data but can be useful for very small tables (< 1000 records)
                     
    fdelim : Field delimiter used for data unloads.
-
-
 
 
 

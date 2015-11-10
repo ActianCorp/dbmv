@@ -12,7 +12,7 @@ Source schema can be:
 	    MICROSOFT SqlServer 
 	    ORACLE
 	    POSTGRES
-	    SAP Sybase IQ (V15+) 
+	    SAP Sybase IQ (V15+)
             TERADATA
 	
 	Schema description can be easily extended to any database in the destination list.
@@ -29,16 +29,16 @@ Target schema can be:
 	    EMC Greenplum 
             IBM Netezza (UDB, not sure about iseries and Zos)
             IBM Netezza (4.xx ?)
-	    ORACLE Mysql 
-	    MICROSOFT SqlServer 
+	    ORACLE Mysql
+	    MICROSOFT SqlServer
 	    ORACLE
 	    POSTGRES
             PROGRESS Database
-	    SAP Sybase IQ (V15+) 
+	    SAP Sybase IQ (V15+)
 	    SAP Sybase ASA (Anywhere)
 	    SAP Sybase ASE
-	    SAP Hana 
-	    SAP MaxDB 
+	    SAP Hana
+	    SAP MaxDB
             TERADATA
 
 	

@@ -54,7 +54,7 @@ $ ./dbmv.py
    src    : Source database (--src=URL)
    dest   : Destination database (--src=URL)
 
-          URL : <database provider>[-odbc]://<database hostname>[:port]/<database name>?<database login>&<login password>
+    URL : <database provider>[-odbc]://<database hostname>[:port]/<database name>?<database login>&<login password>
 
           profiler list:
 
@@ -77,8 +77,9 @@ $ ./dbmv.py
 
             About ODBC : 
 
-               Linux database drivers path and configuration must be added in file "../etc/driverTools.xml" (see in-file examples)
-               In Window systems, ODBC drivers and Datasource must exist. No additional configuration is required.
+           Linux database drivers path and configuration must be added in file 
+           "../etc/driverTools.xml" (see in-file examples)
+           In Window systems, ODBC drivers and Datasource must exist. No additional configuration is required.
 
 	       Supported python ODBC => pyodbc
 
@@ -92,14 +93,18 @@ $ ./dbmv.py
 
    parfile: All parameters can be stored is a parfile. Parfiles examples can be find in the "wrk" directory. 
 
-   translation : Schema name translation for table, constraints, indexes
-                 Ex: --translation=scname:public,vw_user,postgres,vw_user;iscname:public,vw_user,postgres,vw_user;rscname:public,vw_user,postgres,vw_user
+   translation : Schema-name translation for table, constraints, indexes
+          Ex: --translation=scname:public,vw_user,postgres,vw_user;iscname:public,vw_user,postgres,vw_user;rscname:public,vw_user,postgres,vw_user
+                 
    		   scname : Tables owned by "public" are moved to schema "vw_user"
                                             "postgres"                   "vw_user"
+                                            
                    iscname: Indexes owner by "public" are moved to schema "vw_user"
                                              "postgres"                   "vw_user"
+                                             
                    rscname: Constraints owner by "public" are moved to schema "vw_user"
                                                  "postgres"                   "vw_user"
+
 
    quote : Quote DDL (Ex: --quote='"' => CREATE TABLE "my_table")
 
@@ -108,6 +113,7 @@ $ ./dbmv.py
 
    unload/loadata : Very basic unload/load facilities for data. Absolutly unefficient for massive
                     data but can be useful for very small tables (< 1000 records)
+                    
    fdelim : Field delimiter used for data unloads.
 
 

@@ -122,7 +122,7 @@ def getDbStringDetails (p_db):
    Get Indexed XML data from XML file. 
 '''
 def getXMLdata(p_key1, p_key2=None, p_key3=None):
-
+    
    rc=""
 
    xmldoc = xml.dom.minidom.parse( XMLINI )
@@ -182,7 +182,7 @@ class dbconnector:
          
       elif self.dbtype == "mssql":
          s           = "%s:%s" % (hostname, port)
-         self.db     = pymssql.connect(host=s, user=user, password=pwd, database=dbname, as_dict=True)
+         self.db     = pymssql.connect(host=s, user=user, password=pwd, database=dbname, as_dict=False)
          self.cursor = self.db.cursor()
 
       elif self.dbtype == "mysql":

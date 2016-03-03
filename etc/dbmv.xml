@@ -505,22 +505,22 @@
        ORDER BY 1,2,3, a.attnum
     </select>
     <create id="sch">
-      CREATE SCHEMA ${scname};
+      CREATE DATABASE ${scname};
     </create>
     <create id="tb">
-      CREATE TABLE ${scname}.${tbname} (
+      CREATE TABLE ${tbname} (
          ${clname}	${tyname}	${isnull} 	${dfval}
       );
     </create>
     <create id="uk">
-      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
     </create>
     <create id="fk">
-      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${scname}.${rtbname} ( ${rclname} );
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
+      	REFERENCES ${rtbname} ( ${rclname} );
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${ixname} ON ${scname}.${tbname} ( ${clname} )
+      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
     </create>
   </postgres>
 

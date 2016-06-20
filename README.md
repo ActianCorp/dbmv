@@ -46,18 +46,18 @@ Without parameters dbmv.py diplays a simple help about parameters
 
 $ ./dbmv.py 
 
-   Usage : 
+Usage : 
      ['src=', 'dest=', 'loadata', 'cretab', 'creall', 'loaddl', 'parfile=', 'fdelim=', 
      'unload', 'translation=', 'quote=', 'cmdsep=']
 
 
-   src    : Source database      (--src=URL)
+src    : Source database      (--src=URL)
    
-   dest   : Destination database (--src=URL)
+dest   : Destination database (--src=URL)
 
-   URL : db_driver[-odbc]://db_host[:port]/dbname?db_login&login_password
+URL : db_driver[-odbc]://db_host[:port]/dbname?db_login&login_password
    
-          db_driver list:
+db_driver list:
 
 	    ACTIAN VectorH, Vector -> vectorwise
             ACTIAN Ingres          -> ingres
@@ -76,21 +76,21 @@ $ ./dbmv.py
             TERADATA               -> teradata
 
 
-            About ODBC : Linux database drivers path and configuration must be added in file 
+About ODBC : Linux database drivers path and configuration must be added in file 
             
             "../etc/driverTools.xml" (see in-file examples)
             
-           (On Window systems, ODBC drivers and Datasource must exist. No additional configuration is required).
+On Window systems, ODBC drivers and Datasource must exist. No additional configuration is required.
 
-   cretab : Switch to Create tables only
-   creall : Switch to all objects TABLES, INDEXES, PRIMARY KEYS, REFERENTIAL CONSTRAINTS
-   loaddl : Load ddl into destination database. If not specified, a file containing all objects   
-      	   is created in the current directory. In this latest case, you can reload 
+cretab : Switch to Create tables only
+   
+creall : Switch to all objects TABLES, INDEXES, PRIMARY KEYS, REFERENTIAL CONSTRAINTS
 
-   parfile: All parameters can be stored is a parfile. Parfiles examples can be find in the "wrk" directory. 
+loaddl : Load ddl into destination database. If not specified, a file containing all objects is created in the current directory. In this latest case, you can reload.
 
-   translation : Schema-name translation for table, constraints, indexes
-   (Ex: --translation=scname:public,vw_user,postgres,vw_user;iscname:public,vw_user,postgres,vw_user;rscname:public,vw_user,postgres,vw_user)
+parfile: All parameters can be stored is a parfile. Parfiles examples can be find in the "wrk" directory. 
+
+translation : Schema-name translation for table, constraints, indexes (Example: --translation=scname:public,vw_user,postgres,vw_user;iscname:public,vw_user,postgres,vw_user;rscname:public,vw_user,postgres,vw_user)
    
                  
    		   scname : Tables owned by "public" are moved to schema "vw_user"

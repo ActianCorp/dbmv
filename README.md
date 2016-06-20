@@ -51,16 +51,16 @@ Usage :
      'unload', 'translation=', 'quote=', 'cmdsep=']
 
 
-src    : Source database      (--src=URL)
+* src    : Source database      (--src=URL)
    
-dest   : Destination database (--src=URL)
+* dest   : Destination database (--src=URL)
 
 URL : db_driver[-odbc]://db_host[:port]/dbname?db_login&login_password
    
 db_driver list:
 
 	    ACTIAN VectorH, Vector -> vectorwise
-            ACTIAN Ingres          -> ingres
+	    ACTIAN Ingres          -> ingres
 	    EMC Greenplum          -> greenplum
 	    IBM Netezza            -> netezza
 	    ORACLE Mysql           -> mysql
@@ -73,7 +73,7 @@ db_driver list:
 	    SAP Sybase ASE         -> ase
 	    SAP Hana               -> hana
 	    SAP MaxDB              -> maxdb
-            TERADATA               -> teradata
+	    TERADATA               -> teradata
 
 
 About ODBC : Linux database drivers path and configuration must be added in file 
@@ -82,36 +82,33 @@ About ODBC : Linux database drivers path and configuration must be added in file
             
 On Window systems, ODBC drivers and Datasource must exist. No additional configuration is required.
 
-cretab : Switch to Create tables only
+* cretab : Switch to Create tables only
    
-creall : Switch to all objects TABLES, INDEXES, PRIMARY KEYS, REFERENTIAL CONSTRAINTS
+* creall : Switch to all objects TABLES, INDEXES, PRIMARY KEYS, REFERENTIAL CONSTRAINTS
 
-loaddl : Load ddl into destination database. If not specified, a file containing all objects is created in the current directory. In this latest case, you can reload.
+* loaddl : Load ddl into destination database. If not specified, a file containing all objects is created in the current directory. In this latest case, you can reload.
 
-parfile: All parameters can be stored is a parfile. Parfiles examples can be find in the "wrk" directory. 
+* parfile: All parameters can be stored is a parfile. Parfiles examples can be find in the "wrk" directory. 
 
-translation : Schema-name translation for table, constraints, indexes (Example: --translation=scname:public,vw_user,postgres,vw_user;iscname:public,vw_user,postgres,vw_user;rscname:public,vw_user,postgres,vw_user)
-   
-                 
-   		   scname : Tables owned by "public" are moved to schema "vw_user"
-                                            "postgres"                   "vw_user"
+* translation : Schema-name translation pairs for tables, constraints, indexes 
+
+  Example: ```--translation=scname:public,vw_user,postgres,vw_user;
+                           iscname:public,vw_user,postgres,vw_user;
+                           rscname:public,vw_user,postgres,vw_user   ```
+
+  * scname : Tables owned by "public" are moved to schema "vw_user", and from "postgres" to "vw_user"
                                             
-                   iscname: Indexes owner by "public" are moved to schema "vw_user"
-                                             "postgres"                   "vw_user"
+  * iscname: Indexes owner by "public" are moved to schema "vw_user" and from "postgres" to "vw_user"
                                              
-                   rscname: Constraints owner by "public" are moved to schema "vw_user"
-                                                 "postgres"                   "vw_user"
+  * rscname: Constraints owner by "public" are moved to schema "vw_user" and from "postgres" to "vw_user"
 
+* quote : Quote DDL (Ex: --quote='"' => CREATE TABLE "my_table")
 
-   quote : Quote DDL (Ex: --quote='"' => CREATE TABLE "my_table")
+* cmdsep: Command separator (default=';') used in DDL file (Ex: --cmdsep='\g' or --cmdsep='go') 
 
-   cmdsep: Command separator (default=';') used in DDL file (Ex: --cmdsep='\g' or --cmdsep='go') 
-
-
-   unload/loadata : Very basic unload/load facilities for data. Absolutly unefficient for massive
-                    data but can be useful for very small tables (< 1000 records)
+* unload/loadata : Very basic unload/load facilities for data. Absolutly unefficient for massive data but can be useful for very small tables (< 1000 records)
                     
-   fdelim : Field delimiter used for data unloads.
+* fdelim : Field delimiter used for data unloads.
 
 
 
@@ -119,7 +116,7 @@ Supported Python drivers are:
 
    pyodbc                         # Module for ODBC
 
-   or:
+or:
 ```
    ingresdbi                      # Module for Ingres transactional database
    cx_Oracle                      # Module for Oracle

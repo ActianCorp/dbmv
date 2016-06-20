@@ -122,7 +122,7 @@ Supported Python drivers are:
    pyodbc                         # Module for ODBC
 
    or:
-'''
+```
    ingresdbi                      # Module for Ingres transactional database
    cx_Oracle                      # Module for Oracle
    Sybase                         # Module for Sybase ASE
@@ -130,4 +130,4 @@ Supported Python drivers are:
    MySQLdb                        # Module for Mysql
    psycopg2, psycopg2.extensions  # Postgres module
    import DB2                     # Module for DB2
-'''
+```

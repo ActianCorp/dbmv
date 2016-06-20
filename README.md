@@ -27,13 +27,13 @@ Target schema can be:
 	    ACTIAN Ingres
 	    EMC Greenplum
 	    IBM Netezza (UDB, not sure about iseries and Zos)
-            IBM Netezza (4.xx ?)
-            ORACLE Mysql
+	    IBM Netezza (4.xx ?)
+	    ORACLE Mysql
 	    MICROSOFT SqlServer
 	    ORACLE
 	    POSTGRES
-            PROGRESS Database
-            SAP Sybase IQ (V15+)
+	    PROGRESS Database
+	    SAP Sybase IQ (V15+)
 	    SAP Sybase ASA (Anywhere)
 	    SAP Sybase ASE
 	    SAP Hana
@@ -55,9 +55,9 @@ Usage :
    
 * dest   : Destination database (--src=URL)
 
-URL : db_driver[-odbc]://db_host[:port]/dbname?db_login&login_password
+  URL : db_driver[-odbc]://db_host[:port]/dbname?db_login&login_password
    
-db_driver list:
+  db_driver list:
 
 	    ACTIAN VectorH, Vector -> vectorwise
 	    ACTIAN Ingres          -> ingres
@@ -67,7 +67,7 @@ db_driver list:
 	    MICROSOFT SqlServer    -> mssql
 	    ORACLE                 -> oracle
 	    POSTGRES               -> postgres
-            PROGRESS Database      -> progress
+	    PROGRESS Database      -> progress
 	    SAP Sybase IQ (V15+)   -> iq
 	    SAP Sybase ASA         -> asa
 	    SAP Sybase ASE         -> ase
@@ -76,11 +76,11 @@ db_driver list:
 	    TERADATA               -> teradata
 
 
-About ODBC : Linux database drivers path and configuration must be added in file 
+  About ODBC : Linux database drivers path and configuration must be added in file 
             
             "../etc/driverTools.xml" (see in-file examples)
             
-On Window systems, ODBC drivers and Datasource must exist. No additional configuration is required.
+  On Window systems, ODBC drivers and Datasource must exist. No additional configuration is required.
 
 * cretab : Switch to Create tables only
    

@@ -3,9 +3,9 @@
 A database schema conversion tool
 
 
-dbmv.py helps you to move one database schema to another database if you have a 'live' connection available to both source and target databases.
+dbmv.py helps you to move one database schema to another database if you have a 'live' connection available to both source and target databases. ODBC is used to both manage metadata about the schemas and to transfer data (if required), so Python-accessible ODBC drivers are required on the execution machine.
 
-Source schema can be:
+Source schemas can be from:
 
 	    ORACLE Mysql
 	    MICROSOFT SqlServer
@@ -16,7 +16,8 @@ Source schema can be:
 	
 	
 Schema description can be easily extended to any database in the destination list. You need to add missing description for "tbDefinition", etc, ... in file "dbmx.xml".
-SQL output, field names, SELECT descriptions must respect the pattern used for other existing databases.
+
+SQL output, field names, and SELECT descriptions must respect the pattern used for other existing databases.
 
 
 

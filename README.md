@@ -3,10 +3,9 @@
 A database schema conversion tool
 
 
-dbmv.py helps you to move one database schema to another database
+dbmv.py helps you to move one database schema to another database if you have a 'live' connection available to both source and target databases.
 
 Source schema can be:
-
 
 	    ORACLE Mysql
 	    MICROSOFT SqlServer
@@ -16,10 +15,8 @@ Source schema can be:
 	    TERADATA
 	
 	
-	Schema description can be easily extended to any database in the destination list. 
-	You need to add missing description for "tbDefinition", etc, ... in file "dbmx.xml".
-	SQL output, field names, SELECT descriptions must be respect the pattern used 
-	for other existing databases.
+Schema description can be easily extended to any database in the destination list. You need to add missing description for "tbDefinition", etc, ... in file "dbmx.xml".
+SQL output, field names, SELECT descriptions must respect the pattern used for other existing databases.
 
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+  #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # For UTF-8 see: http://www.python.org/dev/peps/pep-0263/ 
 # PYTHONIOENCODING=utf_8
@@ -18,7 +18,7 @@
 #    limitations under the License.
 
 
-# Add:
+# Add:V4
 ## Add test on not easily convertable datatypes (MSSQL : sql_variant, xml, byte(s), image, ...)
 
 import sys, os, traceback
@@ -33,11 +33,13 @@ from   string          import Template
 from   copy            import deepcopy
 from   driverTools     import dbconnector
 
-
-
+reload(sys)
+sys.setdefaultencoding('utf-8')
                                                       # Program parameters
-g_pars   = [ 'src='   , 'dest=' , 'loadata'     , 'cretab', 'creall', 'loaddl', 'parfile=', 
-             'fdelim=', 'unload', 'translation=', 'quote=', 'cmdsep=' ] 
+g_pars   = [ 'src='   , 'dest=' , 'loadata' , 'cretab', 'creview', 'creall', 'loaddl', 'loadtest', 'batchsize=', 
+             'truncate', 'parfile=', 'fdelim=', 'unload', 'translation=', 'quote=', 'cmdsep=', 'charmax=',
+			 'creindex', 'ownsrc=', 'owntgt=', 
+			 'add_drop' ] 
 
 
 g_trnm   = {}                                         # Global translation table for names
@@ -55,7 +57,7 @@ XMLINI   = "%s/../etc/%s.xml" % (g_bin, g_prg)
 
 
 ## Remaining Pg datatypes:
-## REM:  The postgres datatype with default precision to NULL exceeds the maximum Vectorwise's precision.
+## REM:  The postgres datatype with default precision to NULL exceeds the maximum Vector's precision.
 ## REM: hence, the datatype is converted to a DOUBLE PRECISION which might not fit expectations. 
 ## bytea 	  	binary data ("byte array")
 ## cidr 	  	IPv4 or IPv6 network address
@@ -91,7 +93,7 @@ pg2vw = {
          "FLOAT8"           : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes 
          "FLOAT4"           : ("FLOAT4"                      , "<COLNAME>", "'<VALUE>'"), # 4 bytes                     
          "REAL"             : ("FLOAT4"                      , "<COLNAME>", "'<VALUE>'"), # 4 bytes
-         "TIMESTAMP"        : ("TIMESTAMP"                   , "<COLNAME>", "'<VALUE>'"), # OR: [0-9] (def: 6) => Add precision VW [max 6]
+         "TIMESTAMP"        : ("TIMESTAMP"                   , "<COLNAME>", "'<VALUE>'"), # OR: [0-9] (def: 6) => Add precision VW [max 9]
          "TIMESTAMP WITHOUT TIME ZONE" : ("TIMESTAMP"        , "<COLNAME>", "'<VALUE>'"), # 
          "TIMESTAMP WITH TIME ZONE"    : ("TIMESTAMP WITH TIME ZONE", "<COLNAME>", "'<VALUE>'"), # 
          "TIMESTAMPTZ"      : ("TIMESTAMP WITH TIME ZONE"    , "<COLNAME>", "'<VALUE>'"), # 
@@ -113,7 +115,7 @@ pg2vw = {
          "BOOL"             : ("BOOLEAN"                     , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
          "VARBINARY"        : ("VARBINARY(<PRECISION>)"      , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
          "IMAGE"            : ("BLOB"                        , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
-         "BIT"              : ("TINYINT"                     , "<COLNAME>", "<VALUE>"  ), # 
+         "BIT"              : ("BOOLEAN"                     , "<COLNAME>", "<VALUE>"  ), # 
          "XML"              : ("CLOB"                        , "CAST(<COLNAME> AS VARCHAR(8000))", "'<VALUE>'")
 }
 
@@ -321,6 +323,10 @@ ms2mx = {
 '''
 ms2ii = {
          "INT"              : ("INTEGER"                     , "<COLNAME>", "<VALUE>"  ), # Signed 4 bytes integer (-2^31; 2^31 - 1 (2,147,483,647))
+'''
+	added the full INTEGER value
+'''
+         "INTEGER"          : ("INTEGER"                     , "<COLNAME>", "<VALUE>"  ), # Signed 4 bytes integer (-2^31; 2^31 - 1 (2,147,483,647))
          "NUMERIC"          : ("NUMERIC(<PRECISION>,<SCALE>)", "<COLNAME>", "<VALUE>"  ), # MSSQL: -10^38 +1 through 10^38 –1. 
          "DECIMAL"          : ("DECIMAL(<PRECISION>,<SCALE>)", "<COLNAME>", "<VALUE>"  ),
          "BIT"              : ("BOOLEAN"                     , "<COLNAME>", "<VALUE>"  ), # SQL:0/1; 
@@ -329,13 +335,13 @@ ms2ii = {
          "BIGINT"           : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
          "FLOAT"            : ("FLOAT(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"), # MSSQL: Storage depends of precision(4 or 8). We take 8
          "REAL"             : ("FLOAT(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"), # MSSQL: = FLOAT
-         "UNIQUEIDENTIFIER" : ("VARCHAR(64)"                 , "<COLNAME>", "'<VALUE>'"),
+         "UNIQUEIDENTIFIER" : ("UUID"                        , "<COLNAME>", "'<VALUE>'"), # DEFAULT is automatic as UUID_CREATE()
          "ROWVERSION"       : ("BIGINT"                      , "<COLNAME>", "'<VALUE>'"), # MS : An incremental number for versionning
          "MONEY"            : ("NUMERIC(19,4)"               , "<COLNAME>", "<VALUE>"  ), # MSSQL : NUMERIC(19,4) 8 bytes
          "SMALLMONEY"       : ("NUMERIC(10,4)"               , "<COLNAME>", "<VALUE>"  ), # MSSQL : NUMERIC(10,4) 4 bytes
          "TIMESTAMP"        : ("BIGINT"                      , "<COLNAME>", "'<VALUE>'"), # MS = ROWVERSION
          "DATETIME"         : ("TIMESTAMP"                   , "CONVERT(VARCHAR,<COLNAME>,121)", "'<VALUE>'"),   # SQL: 1999-01-08 04:05:06; ii: sweden
-         "SMALLDATETIME"    : ("INGRESDATE"                  , "CONVERT(VARCHAR,<COLNAME>,120)", "'<VALUE>'"),
+         "SMALLDATETIME"    : ("TIMESTAMP"                   , "CONVERT(VARCHAR,<COLNAME>,120)", "'<VALUE>'"),   # depricate the INGRESDATE 
          "NCHAR"            : ("NCHAR(<PRECISION>)"          , "CAST(<COLNAME> AS TEXT)", "'<VALUE>'"),
          "CHAR"             : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"),
          "NVARCHAR"         : ("NVARCHAR(<PRECISION>)"       , "CAST(<COLNAME> AS TEXT)", "'<VALUE>'"),          # Should be NTEXT but pb driver MSSQL
@@ -352,15 +358,25 @@ ms2ii = {
 '''
   Global translation table for datatype conversion from MS*SQL to INGRES VW
   VW : not compressed datatypes :  DECIMAL with precision > 18, float, float4
+       Keith Bolam - these are old definitions exclusions
        Unsupported datatypes : *BYTES, INGRESDATE, BOOLEAN, UUID, TABLE_KEY, OBJECT_KEY, * WITH TIMEZONE
+	  Updated list
+       Unsupported datatypes : *BYTES, INGRESDATE, TABLE_KEY, OBJECT_KEY
+	   
+	   The PLACEHOLDER was added due to a bug with the parsing of the arrary - perhaps introduced by the comment?? 
   
 '''
 ms2vw = {
          "INT"              : ("INTEGER"                     , "<COLNAME>", "<VALUE>"  ), # Signed 4 bytes integer (-2^31; 2^31 - 1 (2,147,483,647))
-         "NUMERIC"          : ("DECIMAL(<PRECISION>,<SCALE>)", "<COLNAME>", "<VALUE>"  ), # MSSQL: -10^38 +1 through 10^38 –1. 
+         "INTEGER"          : ("INTEGER"                     , "<COLNAME>", "<VALUE>"  ), # Signed 4 bytes integer (-2^31; 2^31 - 1 (2,147,483,647))
+'''
+	added the INTEGER
+'''
+         "PLACEHOLDER"      : ("PLACEHOLDER"               , "<COLNAME>", "<VALUE>"  ), # MSSQL : NUMERIC(10,4)
+         "NUMERIC"          : ("NUMERIC(<PRECISION>,<SCALE>)", "<COLNAME>", "<VALUE>"  ), # MSSQL: -10^38 +1 through 10^38 –1. 
          "DECIMAL"          : ("DECIMAL(<PRECISION>,<SCALE>)", "<COLNAME>", "<VALUE>"  ),
-         "MONEY"            : ("DECIMAL(19,4)"               , "<COLNAME>", "<VALUE>"  ), # MSSQL : NUMERIC(19,4)
          "SMALLMONEY"       : ("DECIMAL(10,4)"               , "<COLNAME>", "<VALUE>"  ), # MSSQL : NUMERIC(10,4)
+         "MONEY"            : ("DECIMAL(19,4)"               , "<COLNAME>", "<VALUE>"  ), # MSSQL : NUMERIC(19,4)
          "TINYINT"          : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # SQL: [O:255] - VW(TINYINT): -128:+127
          "SMALLINT"         : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # 2 Bytes [-32768:32767]-
          "BIGINT"           : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
@@ -376,16 +392,42 @@ ms2vw = {
          "CHAR"             : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"),
          "NVARCHAR"         : ("NVARCHAR(<PRECISION>)"       , "<COLNAME>", "'<VALUE>'"), 
          "VARCHAR"          : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"),
-         "TEXT"             : ("LONG VARCHAR"                , "CAST(<COLNAME> AS VARCHAR(max))", "'<VALUE>'"), # MS: 2^31 Chars
-         "NTEXT"            : ("LONG NVARCHAR"               , "CAST(<COLNAME> AS NVARCHAR(max))", "'<VALUE>'"), # MS: 2^31/2 UTF8 Chars
-         "UNIQUEIDENTIFIER" : ("VARCHAR(64)"                 , "<COLNAME>", "'<VALUE>'"),
-         "BINARY"           : ("BINARY(<PRECISION>)"         , "CAST(<COLNAME> AS NVARCHAR(max))", "'<VALUE>'"  ), # MS: [1:8000] (Fixed size)
-         "VARBINARY"        : ("VARBINARY(<PRECISION>)"      , "CASE WHEN <COLNAME> IS NOT NULL THEN '--IMAGE--' END", "'<VALUE>'"  ), # MS: [1:8000] (Var size)
+         "TEXT"             : ("VARCHAR(4000)"               , "CAST(<COLNAME> AS VARCHAR(4000))", "'<VALUE>'"), # MS: 2^31 Chars
+         "NTEXT"            : ("NVARCHAR(4000)"              , "CAST(<COLNAME> AS NVARCHAR(4000))", "'<VALUE>'"), # MS: 2^31/2 UTF8 Chars
+         "UNIQUEIDENTIFIER" : ("UUID"                        , "<COLNAME>", "'<VALUE>'"),    # ADed UUID in Vector 5.0
+          #the following are not supported in any shape in Vector currently - this can change in Vector 5.1 where the BINARY columns can be put into a hash/heap table and join back the main table
+         "BINARY"           : ("BINARY(<PRECISION>)"         , "CAST(<COLNAME> AS NVARCHAR(4000))", "'<VALUE>'"  ), # MS: [1:8000] (Fixed size)
+         "VARBINARY"        : ("CHARACTER VARYING(4000)"      , "CASE WHEN <COLNAME> IS NOT NULL THEN '--IMAGE--' END", "'<VALUE>'"  ), # MS: [1:8000] (Var size)
          "IMAGE"            : ("LONG BYTE"                   , "<COLNAME>", "<VALUE>"  ), # MS: 2^31 bytes
          "BIT"              : ("TINYINT"                     , "CAST(<COLNAME> AS TINYINT)", "<VALUE>"  ), # SQL:0/1; 
-         "XML"              : ("LONG NVARCHAR"               , "CAST(<COLNAME> AS NVARCHAR(max))", "'<VALUE>'") # MSSQL : 2 GB
+         "XML"              : ("NVARCHAR(4000)"              , "CAST(<COLNAME> AS NVARCHAR(4000))", "'<VALUE>'"), # MSSQL : 2 GB
+         "HIERARCHYID"      : ("NVARCHAR(4000)"             , "CAST(<COLNAME> AS NVARCHAR(4000))", "'<VALUE>'"),
+         "GEOMETRY"         : ("NVARCHAR(4000)"             , "CAST(<COLNAME> AS NVARCHAR(4000))", "'<VALUE>'"),
+         "GEOGRAPHY"        : ("NVARCHAR(4000)"             , "CAST(<COLNAME> AS NVARCHAR(4000))", "'<VALUE>'"),
+         "BINARY"           : ("BINARY(<PRECISION>)"         , "CAST(<COLNAME> AS NVARCHAR(4000))", "'<VALUE>'"  ), # MS: [1:8000] (Fixed size)
+         "VARBINARY"        : ("CHARACTER VARYING(4000)"      , "CASE WHEN <COLNAME> IS NOT NULL THEN '--IMAGE--' END", "'<VALUE>'"  ), # MS: [1:8000] (Var size)
+#         "BIT"              : ("BOOLEAN"                    , "CAST(<COLNAME> AS TINYINT)", "<VALUE>"  ), # SQL:0/1; 
+         "BIT"              : ("BOOLEAN"                    , "<COLNAME>", "'<VALUE>'") # SQL:0/1; 
+
 }
 
+ms2vw_default = {
+  "DEFAULT newid"   : "",
+  "DEFAULT getdate" : "DEFAULT CURRENT_TIMESTAMP",
+  "IDENTITY(1,1)"   : "GENERATED BY DEFAULT AS IDENTITY ",
+  "COMMA"           : ""","""
+}
+
+ms2vw_view = [
+  ["["                 , "\""],
+  ["]"                 , "\""],
+  ["CONVERT(money"     , "money"],         ## poor mans awk/substitution/translation                 
+  ["(money,("          ,  "((money("],     ## money and other items are available as automatic CAST operators
+  ["0101"              ,  "-01-01"],       ## some rudimentory massage of the dates - shoudle  
+  ["1231"              , "-12-31"],
+  ["WITH SCHEMABINDING", ""],
+  ["LAST_ITEM_IS_8"]
+]
 
 '''
   Global translation table for datatype conversion from MS*SQL to TERADATA
@@ -585,7 +627,7 @@ d22d2 = {
 
 
 '''
-  Global translation table for datatype conversion from db2 to Vectorwise
+  Global translation table for datatype conversion from db2 to Vector
   VW : not compressed datatypes :  DECIMAL with precision > 18, float, float4
        Unsupported datatypes : *BYTES, INGRESDATE, BOOLEAN, UUID, TABLE_KEY, OBJECT_KEY, * WITH TIMEZONE
 '''
@@ -712,23 +754,24 @@ g_trmxty  = { "mssql"     : {"mysql"     : ms2my,
                              "matrix"    : ms2mx,
                              "ase"       : ms2ase,
                              "ingres"    : ms2ii,
-                             "vectorwise": ms2vw,
+                             "vector"    : ms2vw,
+                             "vectorh"   : ms2vw,
                              "iq"        : ms2iq,
                              "hana"      : ms2ha
                             },
               "db2"       : {"db2"       : d22d2,
-                             "vectorwise": d22vw,
+                             "vector"    : d22vw,
                             },
-              "oracle"    : {"vectorwise": or2vw
+              "oracle"    : {"vector"    : or2vw
                             },
-              "mysql"     : {"vectorwise": my2vw
+              "mysql"     : {"vector"    : my2vw
                             },
-              "iq"        : {"vectorwise": iq2vw
+              "iq"        : {"vector"    : iq2vw
                             },
-              "postgres"  : {"vectorwise": pg2vw
+              "postgres"  : {"vector"    : pg2vw
                             },
-              "teradata"  : {"vectorwise": td2vw
-                            } 
+              "teradata"  : {"vector"    : td2vw
+                            }
             }           
 
 
@@ -840,34 +883,54 @@ def quote(p_str):
    Generate tables based on src database and convert table to match the destination database format.
 '''
 def generateTb():
+   scname_src  = ""
    scname  = ""
    tbname  = ""
    isnewtb = True
    isnewsch= True
    s       = ""
    rls     = []
+   tmp_tgt = ""
 
+   drp = s.split('\n');
+   ddl = s.split('\n');
    sql = getXMLdata(p_dbtype=g_srcdbtype,  p_sql="select", p_id="tbDefinition")
-   s   = getXMLdata(p_dbtype=g_destdbtype, p_sql="create", p_id="tb"          ).strip()
-   ddl = s.split('\n')
-
+   s   = getXMLdata(p_dbtype=g_destdbtype, p_sql="create", p_id="tb").strip()
+   ddl += s.split('\n')
+   s   = getXMLdata(p_dbtype=g_destdbtype, p_sql="create", p_id="drop" ).strip()
+   drp += s.split('\n')
 
    cur = g_srcdb.execute(sql)
    for line in cur:
-
       row = strip_row(line)
-
-      if (row[0],row[1]) != (scname, tbname):
-
-         if row[0] != scname: isnewsch =True;   
+      '''
+	  An attempt to get one schema only loaded
+	  '''
+      if (p_ownsrc) == (""):				
+          scname_src  = row[0]
+          p_ownsrc == row[0]
+      else:
+          scname_src  = p_ownsrc
+		  
+      if (row[0],row[1]) != (scname_src, tbname):
+#xxxx
+         if row[0] != scname: isnewsch = True;   
          if (scname, tbname) != ("", ""):
-            s += ddl[2]
+            s += ddl[3]
             rls.append(s+g_cmdsep+"\n")
-                        
-         scname  = row[0]
-         tbname  = row[1]
-         isnewtb = True
+            ''' 
+		    an attempt to load a specific table
+		    '''
+            if (p_owntgt) == (""):				
+                scname  = row[0]
+                p_owntgt == row[0]
+            else:
+                scname  = p_owntgt
 
+		 
+         tbname  = row[1]
+         isnewtb = True;
+         
       if isnewsch:
          s        = Template(getXMLdata(p_dbtype=g_destdbtype, p_sql="create", p_id="sch").strip())
          s        = s.substitute(scname=quote(tr('scname',scname)) )
@@ -875,10 +938,14 @@ def generateTb():
          if ( s!= "" ):
             rls.append(s+g_cmdsep+"\n")
          else:
-            rls.append(s+"\n")
-
+            rls.append(s+"\n");
       if isnewtb:
-         s = Template(ddl[0])                          # The create table statement
+         if p_addrop:
+             s = Template(drp[1])                          # The drop table statement
+             s = s.substitute(scname=quote(tr('scname',scname)), tbname=quote(tbname) )
+             if ( s!= "" ):
+                 rls.append(s+g_cmdsep+"\n")
+         s = Template(ddl[1])                          # The create table statement
          s = s.substitute(scname=quote(tr('scname',scname)), tbname=quote(tbname) )
          isnewtb = False
       else:
@@ -887,20 +954,137 @@ def generateTb():
       s        += "\n"
       clname    = row[2]
       tyname    = row[3]
-      precision = row[4] if row[4] > 0 else 2000
+      precision = row[4] if row[4] > 0 else p_charmax
       scale     = 0  if row[5] is None else row[5]
       isnull    = '' if row[6] is None else row[6]
       dfval     = '' if row[7] is None else "DEFAULT " + row[7]
+	  
+	  
+	  
 
+      if dfval in ms2vw_default:
+        dfval = ms2vw_default[dfval]
+      if "NEXT VALUE FOR" in dfval: dfval = ''
       (new_type, select_cast, insert_cast) = g_trty[tyname.upper()]    # Substitute datatype by equivalent datatype
-      s        += Template(ddl[1]).substitute( clname=quote(clname), tyname=new_type, isnull=isnull, dfval=dfval)
+      s        += Template(ddl[2]).substitute( clname=quote(clname), tyname=new_type, isnull=isnull, dfval=dfval)
       s         = s.replace('<PRECISION>', str(precision) )
       s         = s.replace('<SCALE>'    , str(scale)     )
-
-   s += ddl[2]
+   s += ddl[3]
    rls.append(s+g_cmdsep+"\n")
 
    return(rls)
+
+''' 
+   Generate views based on src database and convert view to match the destination database format.
+   SELECT s.table_schema as scname, s.table_name as viwname, s.view_definition as viwdef, s.check_option as viwchk , s.is_updateable viwupd
+'''
+def generateViw():
+   scname   = ""
+   scname_src   = ""
+   viwname  = ""
+   viwdef   = ""
+   viwchk   = ""
+   viwupd   = ""
+   tbname   = ""
+   isnewviw = True
+   isnewsch = True
+   s        = ""
+   rls      = []
+
+   
+   sql = getXMLdata(p_dbtype=g_srcdbtype,  p_sql="select", p_id="viwDefinition")
+   s   = getXMLdata(p_dbtype=g_destdbtype, p_sql="create", p_id="viw"          ).strip()
+   ddl = s.split(' ')
+#   print "VIEW NAME>>>>"
+#   print sql
+#   print "VIEW NAME <<<<"
+
+   '''
+      START View
+   '''
+   cur = g_srcdb.execute(sql)
+   for line in cur:
+      row = strip_row(line)     
+      print line
+      '''
+	  An attempt to get one schema only loaded
+	  '''
+      if (p_ownsrc) == (""):				
+          scname_src  = row[0]
+          p_ownsrc == row[0]
+      else:
+          scname_src  = p_ownsrc
+
+      if (row[0],row[1]) != (scname_src, viwname): 
+         if row[0] != scname: 
+			isnewsch =True;   
+         if (scname, viwname) != ("", ""):   
+            rls.append(s+g_cmdsep+"\n")
+         scname  = row[0]
+         viwname = row[1]
+         viwdef = row[2]
+		 
+         if (p_owntgt) == (""):				
+            scname  = row[0]
+         else:
+            scname  = p_owntgt
+         scname_src = row[0]
+#         print "VIEW DEF>>>>"
+#         print p_owntgt
+#         print scname_src
+#         print scname
+#         print viwdef
+#         print "VIEW DEF updated<<<<"
+
+         # Tried regex to swap CONVERT to CAST, but it's detecting too much of the text
+         #regex = re.compile(r'CONVERT\((?P<type>[^,]*),(?P<value>[^,]*)\)', re.MULTILINE)
+         #viwdef = regex.sub(r'CAST(\g<value> AS \g<type>)', viwdef)
+         for i in range(0,len(ms2vw_view)-1):
+            viwdef = viwdef.replace(ms2vw_view[i][0], ms2vw_view[i][1])          
+
+         viwdef = viwdef.replace(quote(p_ownsrc), quote(p_owntgt)) 
+         viwdef = viwdef.replace('['+p_ownsrc+']', quote(p_owntgt))     		 
+ #        print viwdef
+ #        print '['+p_ownsrc+']'
+ #        print "VIEW DEF end<<<<"
+		  
+         isnewviw = True
+ 
+      if isnewsch:
+         s        = Template(getXMLdata(p_dbtype=g_destdbtype, p_sql="create", p_id="sch").strip())
+         s        = s.substitute(scname=quote(tr('scname',scname)) )
+         isnewsch = False
+         if ( s!= "" ):
+            rls.append(s+g_cmdsep+"\n")
+         else:
+            rls.append(s+"\n")
+      else:
+	     print "Already got"
+			
+      if isnewviw:
+         s = viwdef                          # The create view statement         
+         isnewviw= False
+      else:
+         s += ""  
+
+      s        += "\n"
+      viwdef    = row[4]
+#      print "VIEW NAME>>>>"
+#      print viwname
+#      print s
+#      print "VIEW NAME <<<<"
+#     print "VIEW DEF>>>>"
+#     print viwdef
+#     print row[1]
+#     print "VIEW DEF<<<<"
+
+#      s += viwdef    
+#      rls.append(s+g_cmdsep+"\n")
+
+   return(rls)
+'''
+   end View
+'''
 
 
 
@@ -909,11 +1093,15 @@ def generateTb():
    based on src database and convert unique constraint to the new database format.
 '''
 def generateUk():
+   scname_src  = ""
    scname  = ""
    tbname  = ""
    csname  = ""
+   cstype  = ""
    isnewcs = True
    s       = ""
+   msk = '","'
+   t       = ""
    rls     = []                      # A returned list which contains the results of the function
 
    sql     = getXMLdata(p_dbtype=g_srcdbtype , p_sql="select", p_id="ukDefinition")
@@ -924,20 +1112,41 @@ def generateUk():
    for line in cur:
  
       row    = strip_row(line)
+      '''
+	  An attempt to get one schema only loaded
+	  '''
+      if (p_ownsrc) == (""):				
+          scname_src  = row[0]
+          p_ownsrc == row[0]
+      else:
+          scname_src  = p_ownsrc
+      ''' 
+	  Constraint type
+      Column Names
+      '''	  
       cstype = row[3]
       clname = row[4]
-
-      if (row[0], row[1], row[2]) != (scname, tbname, csname):
+   
+      if (row[0], row[1], row[2]) != (scname_src, tbname, csname):
 
          if (scname, tbname, csname) != ("", "", ""):             # We pass to the next index definition
             s = Template(s).substitute(clname='')
             rls.append(s+g_cmdsep+"\n") 
 
-         scname  = row[0]
+#         scname  = row[0]
          tbname  = row[1]
-         csname  = row[2]
+         csname  = row[2]+p_idxsep+row[1]
          isnewcs = True
- 
+         ''' 
+		    an attempt to load a specific table
+		 '''
+         if (p_owntgt) == (""):				
+             scname  = row[0]
+             scname_src  = row[0]
+         else:
+             scname  = p_owntgt
+             scname_src  = p_ownsrc
+			 
          s = Template(ddl)
          s = s.substitute(scname=quote(tr('scname',scname)), tbname=quote(tbname), 
                           csname=quote(csname), cstype=cstype, 
@@ -961,6 +1170,7 @@ def generateUk():
 '''
 def generateFk():
    scname  = ""
+   scname_src = ""
    tbname  = ""
    csname  = ""
    isnewcs = True
@@ -975,8 +1185,18 @@ def generateFk():
    for line in cur:
 
       row     = strip_row(line)
+      '''
+	  An attempt to get one schema only loaded
+	  '''
+      if (p_ownsrc) == (""):				
+          scname_src  = row[0]
+          p_ownsrc == row[0]
+      else:
+          scname_src  = p_ownsrc
+
       clname  = row[3]
       rclname = row[6]
+	  
 
       if (row[0], row[1], row[2]) != (scname, tbname, csname):
 
@@ -986,15 +1206,38 @@ def generateFk():
 
          scname  = row[0]
          tbname  = row[1]
-         csname  = row[2]
+         ''' 
+		    an attempt to load a specific table
+		 '''
+         if (p_owntgt) == (""):				
+             scname  = row[0]
+##             scname_src  = row[0]
+         else:
+             scname  = p_owntgt
+             rscname  = p_owntgt
+##             scname_src  = p_ownsrc
+         ''' 
+         Constraint names( Objects names )  must be unique in a schema
+         ''' 
+         csname  = row[2]+p_idxsep+row[1]
+
+         ''' 
+         Resource owner ... 
+         ALTER TABLE "dbo"."Order Details" ADD CONSTRAINT "FK_Order_Details_Orders"      FOREIGN KEY ( "OrderID" )
+         REFERENCES "dbo_rsc"."Orders_rtb" ( "OrderID" )
+         '''
          rscname = row[4]
+         '''
+         ALTER TABLE "dbo"."CustomerCustomerDemo" ADD CONSTRAINT "FK_CustomerCustomerDemo"      FOREIGN KEY ( "CustomerTypeID" )
+         REFERENCES "dbo"."CustomerDemographics_rtb" ( "CustomerTypeID" )
+         '''
          rtbname = row[5]
          isnewcs = True
  
          s = Template(ddl)
          s = s.substitute( scname =quote(tr('scname' ,scname)) , tbname=quote(tbname), 
                            csname =quote(csname)               , clname=quote(clname)+r'${clname}', 
-                           rscname=quote(tr('rscname',rscname)), rtbname=quote(rtbname), 
+                           rscname=quote(tr('rscname',scname)), rtbname=quote(rtbname), 
                            rclname=quote(rclname)+r'${rclname}')
 
       if isnewcs:
@@ -1016,6 +1259,7 @@ def generateFk():
 def generateIx():
 
    scname  = ""
+   scname_src = ""
    tbname  = ""
    ixname  = ""
    isnewix = True
@@ -1024,13 +1268,29 @@ def generateIx():
 
    sql     = getXMLdata(p_dbtype=g_srcdbtype , p_sql="select", p_id="ixDefinition")
    ddl     = getXMLdata(p_dbtype=g_destdbtype, p_sql="create", p_id="ix"          ).strip()
+#   print "INDEX NAME>>>>"
+#   print sql
+#   print "INDEX NAME <<<<"
 
    cur = g_srcdb.execute(sql)
 
    for line in cur:
-
+ #     print line
       row    = strip_row(line)
+      '''
+	  An attempt to get one schema only loaded
+      '''
+      if (p_ownsrc) == (""):				
+          scname_src  = row[0]
+          p_ownsrc == row[0]
+      else:
+          scname_src  = p_ownsrc
+
       clname = row[6]
+#      print "CLNAME >>>"
+#      print clname
+#      print "CLNAME >>>"
+	  
 
       if (row[0], row[1], row[2]) != (scname, tbname, ixname):
 
@@ -1042,8 +1302,22 @@ def generateIx():
 
          scname  = row[0]
          tbname  = row[1]
+         ''' 
+		    an attempt to load a specific table
+         '''
+         if (p_owntgt) == (""):				
+             scname  = row[0]
+             scname_src  = row[0]
+         else:
+             scname  = p_owntgt
+             rscname  = p_owntgt
+             scname_src  = p_ownsrc
+         ''' 
+         Constraint names( Objects names )  must be unique in a schema
+         ''' 
+
          iscname = row[2]
-         ixname  = row[3]
+         ixname  = row[3]+p_idxsep+row[1]
          ixtype  = row[4]
          ixuniq  = row[5]
          isnewix = True
@@ -1054,16 +1328,18 @@ def generateIx():
                           ixname  = quote(ixname),
                           scname  = quote(tr('scname',scname)), 
                           tbname  = quote(tbname), 
+#                          clname  = quote(clname))   
                           clname  = quote(clname)+r'${clname}')   
 
-
+      print s  
       if isnewix:
          isnewix = False
       else:   
          s = Template(s).substitute(clname=','+quote(clname)+r'${clname}')
-
+         print "ADDING ONE"  
    s = Template(s).substitute(clname='')                          # End index definition
    rls.append(s+"\n") 
+   print s  
 
    return(rls)
 
@@ -1194,13 +1470,49 @@ def unloadData(p_fdelim):
 
 
 
+''' 
+   Loads a lot of data in a single predefined table.
+'''
+def loadTest():
+  # Run precondition script if found (e.g. this can be used to setup session authorization)
+  pres = getXMLdata(p_dbtype=g_destdbtype,  p_sql="create", p_id="pre")
+  pre = Template(pres).substitute(scname=quote(tr('scname',"dbo")))
+  g_destdb.execute(pre)
+  # Iterate to select, bind and insert data
+  s = ""
+  total = 10000
+  try:
+      counter = 0
+      currentCounter = 0
+      inserts = []
 
+      t1 = time.time()
+      for j in range (0, total/p_batchsize):
+        currentCounter = 0
+        inserts = []
+        for i in range (0, p_batchsize):
+          s = "INSERT INTO dbo.Territories VALUES (%d,'%s',%d)" % (i, "Teritory%d" % i, 2*i)
+          inserts.append(s)
+        t2 = time.time()
+        currentCounter += len(inserts) * insertSQL(g_destdb, ";\n".join(inserts))
+        counter += currentCounter
+        print "[%d] Batch inserted: %d - Elapsed time(s): %f" % (j, currentCounter, (t2-t1))
+      
+      t2 = time.time()
+      print "Total rows inserted: %d - Elapsed time(s): %f" % (counter, (t2-t1))
 
+  except Exception:
+      print s
+      traceback.print_exc(file=sys.stdout)
+
+  finally:
+      pass
 
 ''' 
    Extract data from src db and load data to dest db
+   @param truncate: Decides if the existing data should be erased before import
 '''
-def loadData():
+def loadData(truncate):
 
    scname  = ""
    tbname  = ""
@@ -1210,6 +1522,7 @@ def loadData():
    sqls    = []
    s       = ""
    colnum  = 0
+   table_name = ""
 
    sql = getXMLdata(p_dbtype=g_srcdbtype, p_sql="select", p_id="tbDefinition")
 
@@ -1222,7 +1535,7 @@ def loadData():
          if (scname, tbname) != ("", ""):
             insert += ")"
             select += selfrom
-            sqls.append( (colnum, select, insert))
+            sqls.append( (colnum, select, insert, quote(tbname) if scname is None else quote(tr('scname',scname)) + '.' + quote(tbname)))
 
          scname = row[0]
          tbname = row[1]
@@ -1232,6 +1545,7 @@ def loadData():
          selfrom= ' FROM ' + s
 
          s      = quote(tbname) if scname is None else quote(tr('scname',scname)) + '.' + quote(tbname)
+         table_name = s
          insert = 'INSERT INTO '   + s + ' VALUES ('
          colnum = 0
           
@@ -1255,20 +1569,33 @@ def loadData():
 
    insert += ")"
    select += selfrom
-   sqls.append( (colnum, select, insert))
-                                                          # Iterate to select, bind and insert data
+   sqls.append( (colnum, select, insert, table_name))
 
-   for (colnum, select, insert) in sqls: 
+   # Run precondition script if found (e.g. this can be used to setup session authorization)
+   pres = getXMLdata(p_dbtype=g_destdbtype,  p_sql="create", p_id="pre")
+   pre = Template(pres).substitute(scname=quote(tr('scname',scname)))
+   for pre_line in pre.split(';'):
+    g_destdb.execute(pre_line)
+
+   # Iterate to select, bind and insert data
+   for (colnum, select, insert, table_name) in sqls: 
       try:
          print select
          cursrc = g_srcdb.execute(select)
 
          counter = 0
+         currentCounter = 0
+         inserts = []
 
          print "Loading ..."
          sz = 0.0
          t1 = time.time()
 
+         # If truncate was specified remove existing rows from the destination table.
+         if truncate and table_name !='' :
+            g_destdb.execute('MODIFY %s TO TRUNCATED' % table_name)
+        
+         isFirstInsert = True 
          for line in cursrc:                          ## Read source cursor (SELECT)
             row = strip_row(line)
             s   = insert
@@ -1298,27 +1625,27 @@ def loadData():
                      print "- Resulting DML : %s " % (s)
                   finally:
                      pass
-                  
-            try:                                                 ## Execute INSERT 
-               with warnings.catch_warnings(record=True) as w:
-                  warnings.simplefilter("always")
-                  if len(w) > 0: print len(w)
-                  g_destdb.execute(s)
-                  g_destdb.commit ()
-                  if len(w) > 0: 
-                     print s
-                     print str(w[-1].message)
-                  counter += 1
-
-            except Exception:
-               print s
-               traceback.print_exc(file=sys.stdout)
-
-            finally:
-               pass
+            if isFirstInsert:
+              inserts.append(s)
+              isFirstInsert = False
+            else:
+              # Get the string after VAULES, e.g. ('<V0>','<V1>',<V2>)
+              s = s.encode("utf-8")
+              values = s[s.index("VALUES") + 6:]
+              inserts.append(values)
+              currentCounter = len(inserts)
+            if currentCounter>= p_batchsize:
+              counter += currentCounter * insertSQL(g_destdb, ",".join(inserts))
+              inserts = []
+              t2 = time.time()
+              print "Batch inserted: %d - Elapsed time(s): %f - Estimated size(MB): %f\n" % (currentCounter, (t2-t1), sz/1024/1024)
+              currentCounter = 0
+              isFirstInsert = True
+         if currentCounter > 0:
+          counter += currentCounter * insertSQL(g_destdb, ",".join(inserts))
 
          t2 = time.time()
-         print "Rows inserted: %d - Elapsed time(s): %f - Estimated size(MB): %f\n" % (counter, (t2-t1), sz/1024/1024)
+         print "Total Rows inserted: %d - Elapsed time(s): %f - Estimated size(MB): %f\n" % (counter, (t2-t1), sz/1024/1024)
 
       except Exception:
          print s
@@ -1328,8 +1655,29 @@ def loadData():
          pass
 
 
+''' 
+   call db sql script with exception wrap
+'''
+def insertSQL(db, sql):
+    try:                                                 ## Execute INSERT 
+      with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        if len(w) > 0: print len(w)
+        db.execute(sql)
+        db.commit ()
+        if len(w) > 0: 
+            print sql
+            print str(w[-1].message)
+        return 1
 
+    except Exception:
+      print sql
+      traceback.print_exc(file=sys.stdout)
 
+    finally:
+      pass
+    
+    return 0
 # -------------------------------------------------------------------------------------------
 
 #                                            MAIN
@@ -1340,6 +1688,10 @@ def loadData():
 p_loadata   = False
 p_cretab    = False
 p_creall    = False
+p_creview   = False
+p_creindex  = False
+
+p_addrop    = False
 p_loaddl    = False
 p_unload    = False
 p_fdelim    = "\t"
@@ -1347,12 +1699,19 @@ p_src       = None
 p_dest      = None
 p_quote     = None
 p_cmdsep    = None
+p_batchsize = 1000
+p_charmax   = 6400
+p_loadtest  = False
+p_truncate  = False
+global p_ownsrc  
+global p_owntgt  
 
 fname       = ""
 tbs         = []  
 uks         = []
 ixs         = []
 fks         = []
+viw         = []
 
 if sys.argv[1:] == []: usage()                          ## Print usage and exit
 
@@ -1362,7 +1721,9 @@ except getopt.GetoptError, err:
    print str(err)
    for s in g_pars: print s
    sys.exit(2)
-
+####generateViw
+p_owntgt = ""
+p_ownsrc = ""
 for opt, arg in opts:
    if   opt == "--src"    : p_src    = arg.strip()
    elif opt == "--dest"   : p_dest   = arg.strip()
@@ -1370,10 +1731,19 @@ for opt, arg in opts:
    elif opt == "--cmdsep" : p_cmdsep = arg.strip()
    elif opt == "--loadata": p_loadata= True
    elif opt == "--cretab" : p_cretab = True
+   elif opt == "--creindex" : p_creindex = True
+   elif opt == "--add_drop" : p_addrop = True
    elif opt == "--creall" : p_creall = True
+   elif opt == "--creview" : p_creview = True
    elif opt == "--unload" : p_unload = True
    elif opt == "--fdelim" : p_fdelim = arg.strip()
    elif opt == "--loaddl" : p_loaddl = True
+   elif opt == "--batchsize": p_batchsize= int(arg.strip())
+   elif opt == "--charmax" : p_charmax= int(arg.strip())
+   elif opt == "--ownsrc" : p_ownsrc= arg.strip()
+   elif opt == "--owntgt" : p_owntgt= arg.strip()
+   elif opt == "--loadtest": p_loadtest= True
+   elif opt == "--truncate": p_truncate= True
    elif opt == "--parfile": 
       fname    = arg
       if fname != "":
@@ -1388,11 +1758,22 @@ for opt, arg in opts:
               elif param == "--cmdsep": p_cmdsep= value
               elif param == "--fdelim": p_fdelim= value
               elif param == "--translation": init_g_trnm(value)
+              elif param == "--owntgt"  : p_owntgt  = value
+              elif param == "--ownsrc"  : p_ownsrc  = value
    else:
       assert False, "unhandled option"
 
+if p_dest == "vector": 
+    p_idsep = "_x100"
+elif p_dest == "vectorh": 
+    p_idsep = "_x100"
+else:
+    p_idxsep = "_ax11_"	
+	
 print "Src  = %s" % (p_src)
 print "Dest = %s" % (p_dest)
+print "New Target Owner = %s" % (p_owntgt)
+print "Single Source Owner = %s" % (p_ownsrc)
 
 g_srcdbtype  = p_src.split(':')[0].split('-')[0]
 g_destdbtype = p_dest.split(':')[0].split('-')[0]
@@ -1401,7 +1782,7 @@ g_trty       = g_trmxty[g_srcdbtype][g_destdbtype]
 
 g_srcdb      = dbconnector(p_src)
 
-if p_loaddl or p_loadata:   g_destdb = dbconnector(p_dest)
+if p_loaddl or p_loadata or p_loadtest:   g_destdb = dbconnector(p_dest)
 
 if p_quote  is not None:    g_quote  = p_quote
 
@@ -1415,6 +1796,13 @@ if p_cretab:
    for s in tbs: f.write(s)
    f.close()
 
+if p_creview:
+   viw = generateViw()
+   fname = g_prg+'_viw.txt'
+   f = codecs.open(fname, encoding='utf-8', mode= 'w')
+   for s in viw: f.write(s)
+   f.close()
+
 
 if p_loaddl and p_cretab:
    for s in tbs: 
@@ -1425,31 +1813,79 @@ if p_loaddl and p_cretab:
          print s
          print sys.exc_info()
 
+if p_loaddl and p_creview:
+   for s in viw: 
+      try:          
+         g_destdb.execute(s)
+         print s
+      except Exception: 
+         print s
+         print sys.exc_info()
 
-if p_loadata: loadData()
+
+
+if p_loadata: loadData(p_truncate)
 if p_unload : unloadData(p_fdelim)
+if p_loadtest: loadTest()
 
 if p_creall:
    uks = generateUk()
    ixs = generateIx()
    fks = generateFk()
+   viw = generateViw()
    fname = g_prg+'_all.txt'
    f = codecs.open(fname, encoding='utf-8', mode= 'w')
    for s in uks: f.write(s)
    for s in ixs: f.write(s)
    for s in fks: f.write(s)
+   for s in viw: f.write(s)
+
+   f.close()
+   
+if p_creindex:
+   uks = generateUk()
+   ixs = generateIx()
+   fks = generateFk()
+   fname = g_prg+'_index.txt'
+   f = codecs.open(fname, encoding='utf-8', mode= 'w')
+   for s in uks: f.write(s)
+   for s in ixs: f.write(s)
+   for s in fks: f.write(s)
+
    f.close()
 
 if p_loaddl and p_creall:
    for s in uks: 
+      print s
+      try:                 g_destdb.execute(s)
+      except Exception, e: print "Exception : ", e
+   for s in ixs: 
+      print s
+      try:                 g_destdb.execute(s)
+      except Exception, e: print "Exception : ", e
+   for s in fks: 
+      print s
+      try:                 g_destdb.execute(s)
+      except Exception, e: print "Exception : ", e
+   for s in viw: 
+      print s
+      try:                 g_destdb.execute(s)
+      except Exception, e: print "Exception : ", e
+
+if p_loaddl and p_creindex:
+   for s in uks: 
+      print s
       try:                 g_destdb.execute(s)
       except Exception, e: print "Exception : ", e
    for s in ixs: 
       try:                 g_destdb.execute(s)
       except Exception, e: print "Exception : ", e
    for s in fks: 
+      print s
       try:                 g_destdb.execute(s)
       except Exception, e: print "Exception : ", e
+
+
 
 if p_loaddl or p_loadata: g_destdb.close()
 

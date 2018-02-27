@@ -64,9 +64,9 @@ defdbs   = { "mysql":"mysql"  , "oracle":"sys"       , "mssql":"master",
 defports = { "mysql":"3306"   , "oracle":"1521"      , "mssql":"1433"    , 
              "teradata":"1025", "postgres":"5432"    , "greenplum":"5432",
              "db2":"446"      , "ase":"5000"         , "progress":"8104" ,
-             "maxdb":"7200"   , "ingres":"II"        , "vectorwise":"VW" ,
+             "maxdb":"7200"   , "ingres":"II"        , "vector":"VW" ,
              "asa":"2638"     , "iq":"2638"          , "hana":"00",
-             "matrix":"1439"
+             "matrix":"1439"  , "vectorh":"VW" ,
            }
 
 # Error table
@@ -128,7 +128,6 @@ def getXMLdata(p_key1, p_key2=None, p_key3=None):
    xmldoc = xml.dom.minidom.parse( XMLINI )
 
    if (p_key2, p_key3) == (None, None):
-
       node = xmldoc.getElementsByTagName(p_key1)[0]
       rc   = node.childNodes[0].data
 
@@ -162,9 +161,13 @@ class dbconnector:
       (self.dbtype, driver, hostname, port, dbname, user, pwd) = getDbStringDetails(db)
   
       if (self.dbtype in ["teradata", "maxdb"]) or (driver == "-odbc"):
-       dsn        = self.odbc(hostname, port, dbname)
-       print dsn
-       self.db    = pyodbc.connect(dsn=dsn, user=user, password=pwd, ansi=True, autocommit=True)
+       if(self.dbtype == "mssql"):
+        driverValue = "{ODBC Driver 13 for SQL Server}" # Azure DB connection
+        self.db    = pyodbc.connect(host=hostname, port=port, database=dbname, user=user, password=pwd, driver=driverValue)
+       else:
+         dsn        = self.odbc(hostname, port, dbname)
+         print dsn
+         self.db    = pyodbc.connect(dsn=dsn, user=user, password=pwd, ansi=True, autocommit=True)
        self.cursor=self.db.cursor()
 
       elif self.dbtype == "ase": 
@@ -220,10 +223,9 @@ class dbconnector:
          self.db    = pyodbc.connect(dsn=dsn, user=user, password=pwd, autocommit=True)
          self.cursor=self.db.cursor()
 
-      elif self.dbtype in ["ingres", "vectorwise"]:
-         # vnode = @host,protocol,port[;attribute=value{;attribute=value}][[user,password]]
-         s = "@%s,tcp_ip,%s;connection_type=direct" % (hostname, port)
-         self.db=ingresdbi.connect(database=dbname, vnode=s, uid=user, pwd=pwd, dbms_pwd=pwd, autocommit = "Y")   # trace = (7, "dbi.log")
+      elif self.dbtype in ["ingres", "vector", "vectorh"]:
+         connString = "DRIVER={Ingres};SERVER=@%s,tcp_ip,%s;DATABASE=%s;SERVERTYPE=INGRES;UID=%s;PWD=%s;" % (hostname, port, dbname, user, pwd)
+         self.db    = pyodbc.connect(connString, autocommit=True)
          self.cursor=self.db.cursor()
 
       else:
@@ -245,9 +247,10 @@ class dbconnector:
                                                                    # at the beginning
          isSelect = True if pattern.search(p_sql) else False
 
-         self.cursor.execute(p_sql.encode('utf-8'))
+         encodedValue = p_sql.encode('ascii', 'replace')
+         self.cursor.execute(encodedValue)
 
-         if isSelect and self.dbtype in ["db2", "netezza", "teradata", "ingres", "vectorwise", "asa", "iq", "hana"]:
+         if isSelect and self.dbtype in ["db2", "netezza", "teradata", "ingres", "vector", "vectorh", "asa", "iq", "hana"]:
             rows = self.cursor.fetchall()
          else:
             rows = self.cursor
@@ -279,7 +282,7 @@ class dbconnector:
        Create an odbc datasource and return dsn
    '''
    def odbc(self, p_hostname, p_port, p_dbname):
-   
+
       if os.name == "nt": 
          dsn = p_hostname
      

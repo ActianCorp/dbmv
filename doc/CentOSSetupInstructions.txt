@@ -1,0 +1,47 @@
+1. Available linux CentOS 7.3 VM: 
+	a. Connect to it using the following command 'ssh tc@52.166.92.15', the password is T0pcoder1234
+	b. Install python if not present
+	
+2. Installing Actian Vector
+ a. Download Actian Vector for Linux: http://esd.actian.com/product/Vector/5.0/Linux_X86_64-bit/Vector_5.0_Community_Edition/actian-vector-5.0.0-406-community-linux-x86_64.tgz/http
+ b. I needed to copy it to a remote server so I ran the following command:
+	- scp actian-vector-5.0.0-406-community-linux-x86_64.tgz tc@52.166.92.15:/home/tc/ActianMigration/Install
+ c. Install libaio if not already installed: 'yum install libaio1'
+ d. Unzip the actian vector installer archive: 'tar -xvzf actian-vector-5.0.0-406-community-linux-x86_64.tgz'
+ e. In the extracted actian-vector-5.0.0-406-community-linux-x86_64 folder run './install.sh -user tc' (not tc is the existing user with sudo rights)
+	- Answer yes to prompt and user agreement
+	- Last step is to create a password for 'tc' (Actian Vector DB user). I have used the same password as to the system user (T0pcoder1234)
+ f. Connect to the 'sample' db, created by default
+    - go to the home folder of the user that installed actian vector: 'cd /home/tc'
+	- run 'source .ingVWsh' to be able to run the sql commands
+	- run 'sql +user sample', at the password prompt, insert the password created in the above step.
+	- run 'select first 10 * from tbl_churn_quick_start \g' to see that it's working (0 rows will be returned)
+	52.166.92.15/VW
+3. Install pyodbc
+ Installing EPEL on CentOS via yum: 
+ a. yum install epel-release
+ b. yum -y install python-pip
+ c. pip install pyodbc
+
+4. Install Microsoft ODBC Driver 13.1 for SQL Server
+  a. Get the driver package: 'wget http://packages.microsoft.com/rhel/7/prod/msodbcsql-13.1.9.1-1.x86_64.rpm'
+  b. Install dependencies: 'yum install glibc e2fsprogs krb5-libs openssl unixODBC unixODBC-devel'
+  c. install the Driver: 'sudo rpm -i ./msodbcsql-13.1.9.1-1.x86_64.rpm'
+5. Setup environment variables:	
+	- export II_SYSTEM=/opt/Actian/VectorVW/ingres
+	- export LD_LIBRARY_PATH=/opt/Actian/VectorVW/ingres/lib
+	- export ODBCSYSINI=/opt/Actian/VectorVW/ingres/files
+	- export PATH=$PATH:/opt/Actian/VectorVW/ingres/lib:/opt/Actian/VectorVW/ingres/files
+
+6. Verify the Submission
+	- don't forget to run 'source /home/tc/.ingVWsh' to be able to run the sql commands and the migration tool itself has this command as a prerequisite.
+ a. Create a new database	
+	- run 'createdb northwind'
+ b. Copy the Submission folder 'dbmv' to the linux server
+	- scp -r dbmv tc@52.166.92.15:/home/tc/ActianMigration
+ c. Navigate to the dbmv folder on the server
+	- run the migration command:
+	 ./dbmv.py --src=mssql-odbc://actian.database.windows.net/Northwind?tc"&"T0pcoder --dest=vector://localhost/northwind?tc"&"T0pcoder1234 --cretab --loaddl --quote='"'
+	 ./dbmv.py --src=mssql-odbc://actian.database.windows.net/Northwind?tc"&"T0pcoder --dest=vector://localhost/northwind?dbo"&"T0pcoder1234 --loadata --quote='"'
+	 ./dbmv.py --src=mssql-odbc://actian.database.windows.net/Northwind?tc"&"T0pcoder --dest=vector://localhost/northwind?dbo"&"T0pcoder1234 --creall --loaddl --quote='"'
+

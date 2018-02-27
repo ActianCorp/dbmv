@@ -1,0 +1,9 @@
+Actian ID - mishacucicea
+Video 
+	- Windows: https://www.screencast.com/t/G40vffJyZ 
+	- Ubuntu: https://www.screencast.com/t/8Rlerhmmt
+Data Source - https://northwinddatabase.codeplex.com/downloads/get/269239
+
+Notes:
+Please follow the VerificationGuide.docx for a migration walkthrough for windows.
+Separate text files were provided for Ubuntu and CentOS setup.

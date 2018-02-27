@@ -1,0 +1,58 @@
+Prerequisites: 
+ - The setup assumes that there is an Azure DB setup with northwind DB (https://northwinddatabase.codeplex.com/downloads/get/269239)
+ - Note that the below server was already setup (steps 2-6) and it's ready to be used as it is.
+1. Available linux Ubuntu 16.04 VM: 
+	a. Connect to it using the following command 'ssh tc@52.166.54.232', the password is T0pcoder1234
+	b. Install python if not present
+2. Installing Actian Vector
+ a. Download Actian Vector for Linux: http://esd.actian.com/product/Vector/5.0/Linux_X86_64-bit/Vector_5.0_Community_Edition/actian-vector-5.0.0-406-community-linux-x86_64.tgz/http
+ b. I needed to copy it to a remote server so I ran the following command:
+	- scp actian-vector-5.0.0-406-community-linux-x86_64.tgz tc@52.166.54.232:/home/tc/ActianMigration/Install
+ c. Install libaio if not already installed: 'sudo apt-get install libaio1'
+ d. Unzip the actian vector installer archive: 'tar -xvzf actian-vector-5.0.0-406-community-linux-x86_64.tgz'
+ e. In the extracted actian-vector-5.0.0-406-community-linux-x86_64 folder run 'sudo ./install.sh -user tc' (not tc is the existing user with sudo rights)
+	- Answer yes to prompt and user agreement
+	- Last step is to create a password for 'tc' (Actian Vector DB user). I have used the same password as to the system user (T0pcoder1234)
+ f. Connect to the 'sample' db, created by default
+	- run 'source /home/tc/.ingVWsh' to be able to run the sql commands
+	- run 'sql +user sample' (you might need to also run 'sudo apt-get install parallel' to get sql) , at the password prompt, insert the password created in the above step.
+	- run 'select first 10 * from tbl_churn_quick_start \g' to see that it's working (0 rows will be returned)
+3. Install pyodbc
+ a. sudo apt-get install python-pip
+ b. sudo apt-get install unixodbc-dev
+ c. sudo apt-get install python-dev
+ c. pip install pyodbc
+
+4. Install Microsoft ODBC Driver 13 for SQL Server
+ a. Add msodbcsql source
+  - sudo su
+  - curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+  - curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
+  - exit
+  - sudo apt-get update
+ b. sudo ACCEPT_EULA=Y apt-get install msodbcsql=13.0.1.0-1
+
+ 
+5. Setup environment variables:	
+	- export II_SYSTEM=/opt/Actian/VectorVW/ingres
+	- export LD_LIBRARY_PATH=/opt/Actian/VectorVW/ingres/lib
+	- export ODBCSYSINI=/opt/Actian/VectorVW/ingres/files
+	- export PATH=$PATH:/opt/Actian/VectorVW/ingres/lib:/opt/Actian/VectorVW/ingres/files
+
+6. Verify the Submission
+
+ a. Create a new database
+    - don't forget to run 'source /home/tc/.ingVWsh' to be able to run the sql commands and the migration tool itself has this command as a prerequisite.
+	- run 'createdb northwind'
+ b. Copy the Submission folder 'dbmv' to the linux server
+	- scp -r dbmv tc@52.166.54.232:/home/tc/ActianMigration
+ c. Navigate to the dbmv folder on the server
+	- run the migration command:
+	Migrate tables: ./dbmv.py --src=mssql-odbc://actian.database.windows.net/Northwind?tc"&"T0pcoder --dest=vector://localhost/northwind?tc"&"T0pcoder1234 --cretab --loaddl --quote='"'
+	Migrate data: ./dbmv.py --src=mssql-odbc://actian.database.windows.net/Northwind?tc"&"T0pcoder --dest=vector://localhost/northwind?tc"&"T0pcoder1234 --loadata --quote='"'
+	Migrate data with batchsize: ./dbmv.py --src=mssql-odbc://actian.database.windows.net/Northwind?tc"&"T0pcoder --dest=vector://localhost/northwind?tc"&"T0pcoder1234 --loadata
+	--quote='"' --batchsize=1000
+	Migrate constraints ./dbmv.py --src=mssql-odbc://actian.database.windows.net/Northwind?tc"&"T0pcoder --dest=vector://localhost/northwind?tc"&"T0pcoder1234 --creall --loaddl --quote='"'
+	Migrate data testing with 10000 records (assumes table Territories from Northwind DB exits): ./dbmv.py --src=mssql-odbc://actian.database.windows.net/Northwind?tc"&"T0pcoder --dest=vector://localhost/northwind?tc"&"T0pcoder1234 --loadtest --quote='"' --batchsize=1000
+	
+

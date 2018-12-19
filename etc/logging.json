@@ -1,0 +1,46 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "simple": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        }
+    },
+    "filters": {
+        "errorfilter": {
+            "()": "__main__.ErrorFilter",
+            "param": "noshow"
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout",
+            "filters": ["errorfilter"]
+        },
+
+        "error_file_handler": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "DEBUG",
+            "formatter": "simple",
+            "filename": "dbmv_exec.log",
+            "mode": "w",
+            "encoding": "utf8"
+        }
+    },
+
+    "loggers": {
+        "my_module": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": "False"
+        }
+    },
+
+    "root": {
+        "level": "DEBUG",
+        "handlers": ["console", "error_file_handler"]
+    }
+}

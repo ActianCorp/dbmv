@@ -1,0 +1,9 @@
+Actian ID - saylenty
+Actian Community - Alexander Druzhynin
+
+Source code repository (private): https://github.com/saylenty/ActianDBMV
+Amazon MSSQL DB (private): contact me to get access
+Data Source: used NorthwindExtended.sql under /test_files
+Fix analysis video: https://youtu.be/foNqY-6B4kc
+
+Documentation regarding this challenge could be found under /doc/fixes_challange

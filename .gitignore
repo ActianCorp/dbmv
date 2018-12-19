@@ -1,3 +1,5 @@
 .vscode/*
+.idea/*
 dbmv*.txt
 bin/*.pyc
+venv/*

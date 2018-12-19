@@ -16,295 +16,315 @@
 #    limitations under the License.
 
 
-import re, sys, os
+import re
+import sys
+import os
 import xml.dom.minidom
 
 from string import maketrans
 from string import Template
 
 
-try: import ingresdbi                      # Module for Ingres transactional database
-except ImportError: pass
+try:
+    # Module for Ingres transactional database
+    import ingresdbi
+except ImportError:
+    pass
 
-try: import cx_Oracle                      # Module for Oracle
-except ImportError: pass
+try:
+    # Module for Oracle  
+    import cx_Oracle
+except ImportError:
+    pass
 
 
-try: import Sybase                         # Module for Sybase ASE
-except ImportError: pass
+try:
+    # Module for Sybase ASE
+    import Sybase
+except ImportError:
+    pass
 
-try: import pymssql                        # Module for MsSql
-except ImportError: pass
+try:
+    # Module for MsSql  
+    import pymssql
+except ImportError:
+    pass
 
-try: import MySQLdb                        # Module for Mysql
-except ImportError: pass
+try:
+    # Module for Mysql
+    import MySQLdb
+except ImportError:
+    pass
 
-try: import psycopg2, psycopg2.extensions  # Postgres module
-except ImportError: pass
+try:
+    # Postgres module
+    import psycopg2
+    import psycopg2.extensions
+except ImportError:
+    pass
 
-try:                                       # Module for ODBC
-   import pyodbc
-   pyodbc.pooling = False
-except ImportError: pass
+try:
+    # Module for ODBC  
+    import pyodbc
+    pyodbc.pooling = False
+except ImportError:
+    pass
 
-try: import DB2                            # Module for DB2
-except ImportError: pass
+try:
+    # Module for DB2
+    import DB2
+except ImportError:
+    pass
 
 
 # Default databases used when no database has been specified in connect string
-defdbs   = { "mysql":"mysql"  , "oracle":"sys"       , "mssql":"master", 
-             "teradata":"dbc" , "postgres":"postgres", "greenplum":"postgres",
-             "db2":"dsndd04"  , "ase":"master"       , "progress":"sysprogress",
-             "maxdb":"sysinfo", "ingres":"iidbdb"    , "vectowise":"iidbdb",
-             "asa":"sys"      , "iq":"sys"           , "hana":"sys",
-             "matrix":"dev"
-           }
+defdbs = {"mysql": "mysql", "oracle": "sys", "mssql": "master",
+          "teradata": "dbc", "postgres": "postgres", "greenplum": "postgres",
+          "db2": "dsndd04", "ase": "master", "progress": "sysprogress",
+          "maxdb": "sysinfo", "ingres": "iidbdb", "vectowise": "iidbdb",
+          "asa": "sys", "iq": "sys", "hana": "sys",
+          "matrix": "dev"
+          }
 
 # Default port used when no port has been specified in connect string
-defports = { "mysql":"3306"   , "oracle":"1521"      , "mssql":"1433"    , 
-             "teradata":"1025", "postgres":"5432"    , "greenplum":"5432",
-             "db2":"446"      , "ase":"5000"         , "progress":"8104" ,
-             "maxdb":"7200"   , "ingres":"II"        , "vector":"VW" ,
-             "asa":"2638"     , "iq":"2638"          , "hana":"00",
-             "matrix":"1439"  , "vectorh":"VW" ,
-           }
+defports = {"mysql": "3306", "oracle": "1521", "mssql": "1433",
+            "teradata": "1025", "postgres": "5432", "greenplum": "5432",
+            "db2": "446", "ase": "5000", "progress": "8104",
+            "maxdb": "7200", "ingres": "II", "vector": "VW",
+            "asa": "2638", "iq": "2638", "hana": "00",
+            "matrix": "1439", "vectorh": "VW",
+            }
 
 # Error table
-errors   = { "wrong_db_string": "Wrong format for dbconnect. Given: %s, expected: db='dbtype[-odbc]://hostname[:port][/dbname[?user[&Pass]]]'",
-             "unknown_db_type": "This type of database is unknown", "unknown_driver" : "Unknown driver" }
+errors = {"wrong_db_string": "Wrong format for dbconnect. Given: %s, expected: db='dbtype[-odbc]://hostname[:port][/dbname[?user[&Pass]]]'",
+          "unknown_db_type": "This type of database is unknown", "unknown_driver": "Unknown driver"}
 
 
 # Environnement variables
-g_lib    = os.path.dirname(__file__)
-ODBCINI  = ("%s/../etc/%s.odbc") % (g_lib, __name__)
-XMLINI   = ("%s/../etc/%s.xml" ) % (g_lib, __name__)
-II_DATE_FORMAT='SWEDEN'                     ## INGRESDATE datatype formated as '2006-12-15 12:30:55'
+g_lib = os.path.dirname(__file__)
+ODBCINI = ("%s/../etc/%s.odbc") % (g_lib, __name__)
+XMLINI = ("%s/../etc/%s.xml") % (g_lib, __name__)
+II_DATE_FORMAT = 'SWEDEN'  # INGRESDATE datatype formated as '2006-12-15 12:30:55'
+
+os.environ['ODBCINI'] = ODBCINI
+os.environ['II_DATE_FORMAT'] = II_DATE_FORMAT
 
 
-os.environ['ODBCINI']         = ODBCINI  
-os.environ['II_DATE_FORMAT']  = II_DATE_FORMAT  
-
-
-
-'''
-   perror raise NameError and print message
-'''
-def perror ( p_error, p_value=None ):
-   s = errors[p_error]
-   if p_value is not None: s = "%s : %s" % (s, p_value)
-   raise NameError(s)
+def perror(p_error, p_value=None):
+    '''
+        perror raise NameError and print message
+    '''
+    s = errors[p_error]
+    if p_value is not None:
+        s = "%s : %s" % (s, p_value)
+    raise NameError(s)
 
 
 # Extract string details
 # ---------------------------------------------------------
-def getDbStringDetails (p_db):
-      
-   db      = p_db
-   pattern = re.compile(r"^(\w+)(-odbc)?://([a-zA-Z0-9_-]+[\.a-zA-Z0-9_-]*):?([a-zA-Z0-9]*)/?([a-zA-Z0-9_]?[\.a-zA-Z0-9_-]*)\??([\\\.a-zA-Z0-9_-]*)&?([\\!\.a-zA-Z0-9_-]*)$")
+def getDbStringDetails(p_db):
 
-   # Check parameter match : <dbtype>[-odbc] '://' <hostname [.FQDN]> ':' <port> '/' <dbname> '?' <user> '&' <pwd>
-   if not re.match(pattern, db): perror("wrong_db_string", db)
-   
+    db = p_db
+    pattern = re.compile(
+        r"^(\w+)(-odbc)?://([a-zA-Z0-9_-]+[\.a-zA-Z0-9_-]*):?([a-zA-Z0-9]*)/?([a-zA-Z0-9_]?[\.a-zA-Z0-9_-]*)\??([\\\.a-z#A-Z0-9_-]*)&?([\\!\.a-zA-Z#0-9_-]*)$")
+    # Check parameter match : <dbtype>[-odbc] '://' <hostname [.FQDN]> ':' <port> '/' <dbname> '?' <user> '&' <pwd>
+    if not re.match(pattern, db):
+        perror("wrong_db_string", db)
 
-   (dbtype, driver, hostname, port, dbname, user, pwd) = pattern.search(db).groups()
-   
-   if dbname == '': dbname = defdbs[dbtype]            # Setup a default dbname if parameter has been omitted
-   if port   == '': port   = defports[dbtype]          # Setup default port
-   if user   == '': user   = 'P02Zs5vTR'
-   if pwd    == '': pwd    = 'XFNsldj12xxxt'
-   if driver not in [None, '-odbc']: perror("unknown_driver", driver)
+    (dbtype, driver, hostname, port, dbname, user, pwd) = pattern.search(db).groups()
 
-   return( (dbtype, driver, hostname, port, dbname, user, pwd) )
+    if dbname == '':
+        # Setup a default dbname if parameter has been omitted
+        dbname = defdbs[dbtype]
+    if port == '':
+        port = defports[dbtype]          # Setup default port
+    if user == '':
+        user = 'P02Zs5vTR'
+    if pwd == '':
+        pwd = 'XFNsldj12xxxt'
+    if driver not in [None, '-odbc']:
+        perror("unknown_driver", driver)
+
+    return((dbtype, driver, hostname, port, dbname, user, pwd))
 
 
-
-''' 
-   Get Indexed XML data from XML file. 
-'''
 def getXMLdata(p_key1, p_key2=None, p_key3=None):
-    
-   rc=""
-
-   xmldoc = xml.dom.minidom.parse( XMLINI )
-
-   if (p_key2, p_key3) == (None, None):
-      node = xmldoc.getElementsByTagName(p_key1)[0]
-      rc   = node.childNodes[0].data
-
-   else:
-      for node in xmldoc.getElementsByTagName(p_key1)[0].getElementsByTagName(p_key2): 
-         if node.getAttribute("id") == p_key3:
-            for child in node.childNodes:
-              if child.nodeType == xml.dom.minidom.Node.TEXT_NODE:
-                  rc = child.data
-
-   return(rc)
+    ''' 
+        Get Indexed XML data from XML file. 
+    '''
+    result = ""
+    xmldoc = xml.dom.minidom.parse(XMLINI)
+    if (p_key2, p_key3) == (None, None):
+        node = xmldoc.getElementsByTagName(p_key1)[0]
+        result = node.childNodes[0].data
+    else:
+        for node in xmldoc.getElementsByTagName(p_key1)[0].getElementsByTagName(p_key2):
+            if node.getAttribute("id") == p_key3:
+                for child in node.childNodes:
+                    if child.nodeType == xml.dom.minidom.Node.TEXT_NODE:
+                        result = child.data
+    return(result)
 
 
-
-'''
-    Parameter db="dbtype://hostname:port/dbname?
-    mysql://localhost:3306/HerongDB?user&password
-
-'''
 class dbconnector:
+    def __init__(self, p_db, connect = True):
+        '''
+            Parameter db="dbtype://hostname:port/dbname?
+            mysql://localhost:3306/HerongDB?user&password
+        '''
+        db = p_db
+        self.db = None
+        self.cursor = None
+        self.dbtype = None
+
+        (self.dbtype, driver, hostname, port, dbname, user, pwd) = getDbStringDetails(db)
+
+        if (self.dbtype in ["teradata", "maxdb"]) or (driver == "-odbc"):
+            if(self.dbtype == "mssql"):
+                # Azure DB connection
+                driverValue = "{ODBC Driver 13 for SQL Server}"
+                self.db = pyodbc.connect(
+                    host=hostname, port=port, database=dbname, user=user, password=pwd, driver=driverValue)
+            else:
+                dsn = self.odbc(hostname, port, dbname)
+                print dsn
+                self.db = pyodbc.connect(
+                    dsn=dsn, user=user, password=pwd, ansi=True, autocommit=True)
+            self.cursor = self.db.cursor()
+
+        elif self.dbtype == "ase":
+                # hostname defined in interface file
+            self.db = Sybase.connect(
+                dsn=hostname, user=user, passwd=pwd, database=dbname, auto_commit=True)
+            self.cursor = self.db.cursor()
+            self.cursor.execute("set quoted_identifier on")
+
+        elif self.dbtype in ["asa", "iq"]:
+            import sqlanydb                      # Module for Sybase ASA or IQ
+            s = "%s" % (hostname)
+            print s
+            self.db = sqlanydb.connect(
+                eng=s, userid=user, password=pwd, dbn=dbname)
+            self.cursor = self.db.cursor()
+
+        elif self.dbtype == "mssql":
+            s = "%s:%s" % (hostname, port)
+            self.db = pymssql.connect(
+                host=s, user=user, password=pwd, database=dbname, as_dict=False)
+            self.cursor = self.db.cursor()
+
+        elif self.dbtype == "mysql":
+            self.db = MySQLdb.connect(host=hostname, port=int(
+                port), user=user, passwd=pwd, db=dbname)
+            self.cursor = self.db.cursor()
+
+        elif self.dbtype == "db2":
+            self.db = DB2.connect(dsn=dbname, uid=user, pwd=pwd)
+            self.cursor = self.db.cursor()
+
+        elif self.dbtype in ["postgres", "greenplum"]:
+            s = "host='%s' port='%s' user='%s' password='%s' dbname='%s'" % (
+                hostname, port, user, pwd, dbname)
+            self.db = psycopg2.connect(s)
+            self.db.set_isolation_level(
+                psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+            self.cursor = self.db.cursor()
+
+        elif self.dbtype == "oracle":
+            s = "%s/%s@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=%s)(PORT=%s))(CONNECT_DATA=(SERVICE_NAME=%s)))"
+            s = s % (user, pwd, hostname, port, dbname)
+            self.db = cx_Oracle.connect(s)
+            self.cursor = self.db.cursor()
+
+        elif self.dbtype == "netezza":
+            # conn="DRIVER={MySQL ODBC 3.51 Driver}; SERVER=localhost; PORT=3306; DATABASE=mysql; UID=joe;
+            # PASSWORD=bloggs; OPTION=3;SOCKET=/var/run/mysqld/mysqld.sock;"
+            self.cursor = Connect(hostname, user, pwd)
+
+        elif self.dbtype in ["hana"]:
+            from hdbcli import dbapi
+            self.db = dbapi.connect(
+                address=hostname, port=30015+int(port), user=user, password=pwd, autocommit=True)
+            self.cursor = self.db.cursor()
+
+        elif self.dbtype in ["progress"]:
+            dsn = self.odbc(hostname, port, dbname)
+            self.db = pyodbc.connect(
+                dsn=dsn, user=user, password=pwd, autocommit=True)
+            self.cursor = self.db.cursor()
+
+        elif self.dbtype in ["ingres", "vector", "vectorh"]:
+            connString = "DRIVER={Ingres};SERVER=@%s,tcp_ip,%s;DATABASE=%s;SERVERTYPE=INGRES;UID=%s;PWD=%s;" % (
+                hostname, port, dbname, user, pwd)
+            if connect:
+                self.db = pyodbc.connect(connString, autocommit=True)
+                self.cursor = self.db.cursor()
+        else:
+            perror("Unknown_db_type", self.dbtype)
 
 
-   def __init__(self, p_db):
+    # Execute SQL statement
+    # ---------------------------------------------------------
+    def execute(self, p_sql):
+        rows = None
+        pattern = re.compile("\w", re.IGNORECASE)
+        isNotnull = True if pattern.search(p_sql) else False
 
-      db          = p_db
-      s           = ""
-      self.db     = None
-      self.cursor = None
+        if isNotnull:
+            # Query contains newline
+            pattern = re.compile("^ *\n* *select ", re.IGNORECASE)
+            # at the beginning
+            isSelect = True if pattern.search(p_sql) else False
 
-     
-      (self.dbtype, driver, hostname, port, dbname, user, pwd) = getDbStringDetails(db)
-  
-      if (self.dbtype in ["teradata", "maxdb"]) or (driver == "-odbc"):
-       if(self.dbtype == "mssql"):
-        driverValue = "{ODBC Driver 13 for SQL Server}" # Azure DB connection
-        self.db    = pyodbc.connect(host=hostname, port=port, database=dbname, user=user, password=pwd, driver=driverValue)
-       else:
-         dsn        = self.odbc(hostname, port, dbname)
-         print dsn
-         self.db    = pyodbc.connect(dsn=dsn, user=user, password=pwd, ansi=True, autocommit=True)
-       self.cursor=self.db.cursor()
+            encodedValue = p_sql.encode('ascii', 'replace')
+            self.cursor.execute(encodedValue)
 
-      elif self.dbtype == "ase": 
-         # hostname defined in interface file
-         self.db     = Sybase.connect(dsn=hostname, user=user, passwd=pwd, database=dbname, auto_commit=True)                                 
-         self.cursor = self.db.cursor()
-         self.cursor.execute("set quoted_identifier on")
+            if isSelect and self.dbtype in ["db2", "netezza", "teradata", "ingres", "vector", "vectorh", "asa", "iq", "hana"]:
+                rows = self.cursor.fetchall()
+            else:
+                rows = self.cursor
 
-      elif self.dbtype in ["asa", "iq"]: 
-         import sqlanydb                      # Module for Sybase ASA or IQ
-         s           = "%s" % (hostname)
-         print s
-         self.db     = sqlanydb.connect(eng=s, userid=user, password=pwd, dbn=dbname)                   
-         self.cursor = self.db.cursor()
-         
-      elif self.dbtype == "mssql":
-         s           = "%s:%s" % (hostname, port)
-         self.db     = pymssql.connect(host=s, user=user, password=pwd, database=dbname, as_dict=False)
-         self.cursor = self.db.cursor()
+        return(rows)
 
-      elif self.dbtype == "mysql":
-         self.db     = MySQLdb.connect (host=hostname, port=int(port), user = user, passwd = pwd, db=dbname)
-         self.cursor = self.db.cursor()
+    def commit(self):
+        if self.dbtype in ["db2"]:
+            self.cursor.execute("commit")
 
-      elif self.dbtype == "db2":
-         self.db     = DB2.connect (dsn=dbname, uid=user, pwd=pwd)
-         self.cursor = self.db.cursor()
+        elif self.dbtype in ["asa", "iq"]:
+            self.db.commit()
 
-      elif self.dbtype in ["postgres", "greenplum"]:
-         s           = "host='%s' port='%s' user='%s' password='%s' dbname='%s'" % (hostname, port, user, pwd, dbname)
-         self.db     = psycopg2.connect (s)
-         self.db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-         self.cursor = self.db.cursor()
+    def close(self):
+        if self.db is None or self.dbtype in ["netezza", "teradata", "maxdb", "progress"]:
+            pass
+        else:
+            self.db.close()
 
-      elif self.dbtype == "oracle":
-         s = "%s/%s@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=%s)(PORT=%s))(CONNECT_DATA=(SERVICE_NAME=%s)))"
-         s = s % (user, pwd, hostname, port, dbname) 
-         self.db     = cx_Oracle.connect(s)
-         self.cursor = self.db.cursor()
+    def odbc(self, p_hostname, p_port, p_dbname):
+        '''
+          Create an odbc datasource and return dsn
+        '''
+        if os.name == "nt":
+            dsn = p_hostname
+        else:
+            # Create a DSN identifier
+            dsn = "%s_%s" % (p_hostname.split('.')[0], p_dbname)
+            # [hostname_dbname_port]
 
-      elif self.dbtype == "netezza":
-         # conn="DRIVER={MySQL ODBC 3.51 Driver}; SERVER=localhost; PORT=3306; DATABASE=mysql; UID=joe; 
-         # PASSWORD=bloggs; OPTION=3;SOCKET=/var/run/mysqld/mysqld.sock;"   
-         self.cursor = Connect (hostname, user, pwd)
+            # Get odbc information from Xml
+            odbcinfo = getXMLdata(p_key1=self.dbtype)
+            # and trim whitespaces and tabs
+            odbcinfo = odbcinfo.replace(' ', '')
+            odbcinfo = odbcinfo.replace('\t', '')
+            # Create file odbc.ini
+            f = open(ODBCINI, 'w')
+            f.write("[%s]" % (dsn))
+            s = Template(odbcinfo)
+            f.write(s.substitute(hostname=p_hostname, port=p_port, dbname=p_dbname)+"\n")
+            f.close()
+        return(dsn)
 
-      elif self.dbtype in ["hana"]:
-         from hdbcli import dbapi
-         self.db                       = dbapi.connect(address=hostname, port=30015+int(port), user=user, password=pwd, autocommit=True)
-         self.cursor                   = self.db.cursor()
+    def __enter__(self):
+        return self
 
-      elif self.dbtype in ["progress"]:
-         dsn        = self.odbc(hostname, port, dbname) 
-         self.db    = pyodbc.connect(dsn=dsn, user=user, password=pwd, autocommit=True)
-         self.cursor=self.db.cursor()
-
-      elif self.dbtype in ["ingres", "vector", "vectorh"]:
-         connString = "DRIVER={Ingres};SERVER=@%s,tcp_ip,%s;DATABASE=%s;SERVERTYPE=INGRES;UID=%s;PWD=%s;" % (hostname, port, dbname, user, pwd)
-         self.db    = pyodbc.connect(connString, autocommit=True)
-         self.cursor=self.db.cursor()
-
-      else:
-         perror("Unknown_db_type", self.dbtype)
-
-
-  
-
-   # Execute SQL statement
-   # ---------------------------------------------------------
-   def execute(self, p_sql):
-
-      rows     = None
-      pattern  = re.compile("\w", re.IGNORECASE)
-      isNotnull= True if pattern.search(p_sql) else False
-
-      if isNotnull:
-         pattern  = re.compile("^ *\n* *select ", re.IGNORECASE)   # Query contains newline
-                                                                   # at the beginning
-         isSelect = True if pattern.search(p_sql) else False
-
-         encodedValue = p_sql.encode('ascii', 'replace')
-         self.cursor.execute(encodedValue)
-
-         if isSelect and self.dbtype in ["db2", "netezza", "teradata", "ingres", "vector", "vectorh", "asa", "iq", "hana"]:
-            rows = self.cursor.fetchall()
-         else:
-            rows = self.cursor
-
-      return(rows)
-
-
-
-   def commit(self):
-
-      if   self.dbtype in ["db2"]: 
-         self.cursor.execute("commit")
-
-      elif self.dbtype in ["asa", "iq"]: 
-         self.db.commit()
-
-
-   def close(self):
-
-      if   self.dbtype in ["netezza", "teradata", "maxdb", "progress"]: 
-         pass
-
-      else : 
-         self.db.close()
-
-
-
-   '''
-       Create an odbc datasource and return dsn
-   '''
-   def odbc(self, p_hostname, p_port, p_dbname):
-
-      if os.name == "nt": 
-         dsn = p_hostname
-     
-      else:
-         dsn = "%s_%s" % (p_hostname.split('.')[0], p_dbname)             # Create a DSN identifier
-                                                                       # [hostname_dbname_port]
-
-         odbcinfo = getXMLdata(p_key1=self.dbtype)                        # Get odbc information from Xml
-         odbcinfo = odbcinfo.replace(' ','')                              # and trim whitespaces and tabs
-         odbcinfo = odbcinfo.replace('\t','')   
-                                                               # Create file odbc.ini 
-         f   = open(ODBCINI, 'w')                                                            
-         f.write( "[%s]" %(dsn) )                                                                      
-         s = Template( odbcinfo )   
-         f.write( s.substitute(hostname=p_hostname, port=p_port, dbname=p_dbname)+"\n" )
-
-         f.close()
-       
-      return(dsn)
-
-
-
-
-
-
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()

@@ -14,6 +14,9 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+#    
+#    History
+#    cooda09	28-01-19	Modifications for --mapping option
 
 import getopt
 import os
@@ -71,7 +74,7 @@ def main():
               'truncate', 'parfile=', 'fdelim=', 'unload', 'translation=', 'quote=', 'cmdsep=', 'charmax=',
               'creindex', 'ownsrc=', 'owntgt=', 'add_drop',
               'on_error=', 'source_schema=', 'target_schema=', 'unsupported=', 'exclude=',
-              'include=', 'tables=', 'insertmode=', 'trial', 'loadmethod=', 'threads=', '--help']
+              'include=', 'tables=', 'insertmode=', 'trial', 'loadmethod=', 'threads=', 'mapping', '--help']
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--src', required=False, action="store",
@@ -142,6 +145,9 @@ def main():
     parser.add_argument('--threads', required=False, action="store",
                         help="specifies custom number of thread to use (default: 1, min: 1,"
                              " max: CPU dependent but <= 32)")
+
+    parser.add_argument('--mapping', required=False, action="store_true",
+                        help="Display SRC to DEST variable assignment mapping")
 
     if not sys.argv[1:]:
         # Print usage and exit

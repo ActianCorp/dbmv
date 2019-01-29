@@ -14,6 +14,9 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+#
+#    History
+#    cooda09    28-01-19        Use of --mapping flag and default option
 
 
 import multiprocessing
@@ -58,6 +61,7 @@ class ConversionParameters:
         self.loadtest = False
         self.truncate = False
         self.translation = None
+        self.mapping = False
 
         # Run the script through ignoring all errors
         self.continue_on_error = False
@@ -237,6 +241,7 @@ class ConversionParameters:
                                       .format(val, thread_limit))
                     sys.exit(1)
             elif opt == "--xx": self.xx = arg.strip()
+            elif opt == "--mapping" :self.mapping = True
             elif opt == "--parfile":
                 fname = arg
                 if fname != "":
@@ -333,8 +338,10 @@ class ConversionParameters:
     def set_index_separator(self):
         dest_dbtype = self.dest.split(':')[0].split('-')[0]
         if dest_dbtype == "vector": 
-            self.index_separator = "_x100"
+            self.index_separator = "_x100_"
+        if dest_dbtype == "ingres": 
+            self.index_separator = "_ii_"
         elif dest_dbtype == "vectorh": 
-            self.index_separator = "_x100"
+            self.index_separator = "_x100_"
         else:
             self.index_separator = "_ax11_"

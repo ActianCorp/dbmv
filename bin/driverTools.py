@@ -81,9 +81,9 @@ except ImportError:
 defdbs = {"mysql": "mysql", "oracle": "sys", "mssql": "master",
           "teradata": "dbc", "postgres": "postgres", "greenplum": "postgres",
           "db2": "dsndd04", "ase": "master", "progress": "sysprogress",
-          "maxdb": "sysinfo", "ingres": "iidbdb", "vectowise": "iidbdb",
+          "maxdb": "sysinfo", "ingres": "iidbdb", "vector": "iidbdb",
           "asa": "sys", "iq": "sys", "hana": "sys",
-          "matrix": "dev"
+          "matrix": "dev","vectorh": "iidbdb","actianx": "iidbdb","vectorc": "iidbdb"
           }
 
 # Default port used when no port has been specified in connect string
@@ -92,7 +92,7 @@ defports = {"mysql": "3306", "oracle": "1521", "mssql": "1433",
             "db2": "446", "ase": "5000", "progress": "8104",
             "maxdb": "7200", "ingres": "II", "vector": "VW",
             "asa": "2638", "iq": "2638", "hana": "00",
-            "matrix": "1439", "vectorh": "VW",
+            "matrix": "1439", "vectorh": "VH", "actianx": "II", "vectorc": "VC",
             }
 
 # Error table
@@ -187,7 +187,6 @@ class dbconnector:
                     host=hostname, port=port, database=dbname, user=user, password=pwd, driver=driverValue)
             else:
                 dsn = self.odbc(hostname, port, dbname)
-                print dsn
                 self.db = pyodbc.connect(
                     dsn=dsn, user=user, password=pwd, ansi=True, autocommit=True)
             self.cursor = self.db.cursor()
@@ -202,7 +201,6 @@ class dbconnector:
         elif self.dbtype in ["asa", "iq"]:
             import sqlanydb                      # Module for Sybase ASA or IQ
             s = "%s" % (hostname)
-            print s
             self.db = sqlanydb.connect(
                 eng=s, userid=user, password=pwd, dbn=dbname)
             self.cursor = self.db.cursor()
@@ -253,7 +251,7 @@ class dbconnector:
                 dsn=dsn, user=user, password=pwd, autocommit=True)
             self.cursor = self.db.cursor()
 
-        elif self.dbtype in ["ingres", "vector", "vectorh"]:
+        elif self.dbtype in ["ingres", "vector", "vectorh", "actianx", "vectorc"]:
             connString = "DRIVER={Ingres};SERVER=@%s,tcp_ip,%s;DATABASE=%s;SERVERTYPE=INGRES;UID=%s;PWD=%s;" % (
                 hostname, port, dbname, user, pwd)
             if connect:
@@ -279,7 +277,7 @@ class dbconnector:
             encodedValue = p_sql.encode('ascii', 'replace')
             self.cursor.execute(encodedValue)
 
-            if isSelect and self.dbtype in ["db2", "netezza", "teradata", "ingres", "vector", "vectorh", "asa", "iq", "hana"]:
+            if isSelect and self.dbtype in ["db2", "netezza", "teradata", "ingres", "vector", "vectorh", "vectorc", "actianx", "asa", "iq", "hana"]:
                 rows = self.cursor.fetchall()
             else:
                 rows = self.cursor

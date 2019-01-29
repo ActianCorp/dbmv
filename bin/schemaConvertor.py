@@ -14,6 +14,9 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+#
+#    History
+#    cooda09    28-01-19       Use of --mapping flag and change to precision precoessing
 
 import codecs
 import sys
@@ -157,6 +160,7 @@ class ConvertorUtil:
             @:param target_db_type
         """
         source_db_type = source_connector.dbtype
+        global types_mapping
         types_mapping = typesMapping.get_types_mapping(source_db_type, target_db_type)
         source_schema = ""
         target_schema = ""
@@ -260,13 +264,21 @@ class ConvertorUtil:
             # Substitute datatype by equivalent datatype
             target_type = types_mapping[tyname.upper()][0]
             s += Template(ddl[2]).substitute(clname=self.quote(clname), tyname=target_type, isnull=isnull, dfval=dfval)
-            s = s.replace('<PRECISION>', str(precision))
-            s = s.replace('<SCALE>', str(scale))
-            if held_structure != "":
+	    precisionstring = str(precision)
+	    if precisionstring.endswith('.0'):
+	        precisionstring = precisionstring[:-2]
+            s = s.replace('<PRECISION>', str(precisionstring))
+			
+	    scalestring = str(scale)
+	    if scalestring.endswith('.0'):
+	        scalestring = scalestring[:-2]
+            s = s.replace('<SCALE>', str(scalestring))
+			
+            if held_structure == "":
                 held_structure = Template(ddl[3]).substitute(clname=self.quote(clname))
 
-        if held_structure == "":
-            held_structure = Template(ddl[3]).substitute(clname=self.quote(clname))
+        if held_structure != "":
+            #held_structure = Template(ddl[3]).substitute(clname=self.quote(clname))
             s += held_structure
 
         if len(rls) > 0:
@@ -367,8 +379,12 @@ class ConvertorUtil:
         self.logger.debug(self.params.source_schema)
         self.logger.debug(source_connector.dbtype)
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="ukDefinition"))
-
-        sql = sql.substitute(schema_filter=self.params.source_schema)
+        print self.params.source_schema
+        print source_connector.dbtype
+        print target_db_type
+		
+        #sql = sql.substitute(schema_filter=self.params.source_schema)
+        sql = sql.substitute(schema_filter='ontime')
         self.logger.debug(sql)
         ddl = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="uk").strip()
 
@@ -1009,6 +1025,14 @@ class SchemaConvertor:
                     try:
                         tbs = self.util.generate_tb(source_connector, target_connector.dbtype)
                         self.util.write_txt_file('tab', tbs)
+                        if self.params.mapping :
+                            ## create a nice readable output
+                            print "\n"
+                            print "%-*s  %-*s " % (32,"Source Column",40,"Target Column")
+                            print "=============================================="
+                            for prt in types_mapping:
+                                print "%-*s  %-*s" % (32,prt,40,types_mapping[prt])
+                            print "\n"
                     except Exception as ex:
                         self.util.handle_error(ex)
 

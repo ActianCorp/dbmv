@@ -84,17 +84,26 @@
                 ELSE 
                    c.data_type
                 END) as "tyname", 
-               NVL(c.data_precision, c.data_length)            as "precision", 
-               NVL(c.data_scale,0)                             as "scale", 
+               cast(NVL(c.data_precision, c.data_length) as number(6,0))            as "precision", 
+               cast(NVL(c.data_scale,0) as number(6,0))                             as "scale", 
                DECODE(c.nullable, 'N', 'NOT NULL', 'Y', NULL)  as "isnull", 
                c.data_default as "dfval"
       FROM     all_tab_columns c, all_tables t
       WHERE    c.owner      = USER
       AND      c.owner      = t.owner
       AND      c.table_name = t.table_name
+      AND      c.table_name NOT LIKE 'SYS_%'
       AND      t.secondary  = 'N'
       AND      t.nested     = 'NO'
       ORDER BY 1, 2, c.column_id
+    </select>
+	  <select id="viwDefinition">
+      SELECT DISTINCT s.table_schema scname, s.table_name viwname, s.view_definition viwdef, s.check_option viwchk , s.is_updatable viwupd
+      FROM (SELECT ora_database_name AS TABLE_CATALOG, 	sys_context( 'userenv', 'current_schema' ) AS TABLE_SCHEMA, view_name AS TABLE_NAME,
+      CONCAT(CONCAT(CONCAT('CREATE VIEW ', view_name), ' AS '),TEXT_VC) AS VIEW_DEFINITION,
+	  CAST (CASE WHEN text_vc like '%WITH%CHECK%OPTION%' then  '/*CHECK_OPTIONi=YES*/' 
+		ELSE '/*CHECK_OPTION=NONE*/' END as varchar2(40)) AS CHECK_OPTION, 'IS_UPDATABLE=NO ' AS IS_UPDATABLE FROM user_views ) s
+      ORDER BY 1,2,3
     </select>
     <select id="fkDefinition">
       SELECT cl1.owner  as scname, cl1.table_name  as tbname, cl1.constraint_name as csname, cl1.column_name as clname, 
@@ -111,11 +120,11 @@
       ORDER BY 1, 2, 3, cl1.position
     </select>
     <select id="ukDefinition">
-      SELECT cs.owner as scname, cs.table_name as tbname, cs.constraint_name as csname, 
-             (CASE  cs.constraint_type WHEN 'P'  THEN 'PRIMARY KEY'
+      SELECT cast(lower(replace(cs.owner,'#','')) as varchar2(40))  as scname, cast(cs.table_name as varchar2(40)) as tbname, replace(cs.constraint_name,'.','') as csname, 
+             cast((CASE  cs.constraint_type WHEN 'P'  THEN 'PRIMARY KEY'
               ELSE                                    'UNIQUE'
-              END) as cstype,
-              cl.column_name as clname
+              END) as varchar2(20)) as cstype,
+              cast(cl.column_name as varchar2(40)) as clname
       FROM  all_constraints cs, all_cons_columns cl 
       WHERE cs.owner            = USER
       AND   cs.constraint_type IN ('P', 'U')
@@ -837,8 +846,8 @@
       </create>
       <create id="tb">
          CREATE TABLE ${scname}.${tbname} (
-            ${clname}	${tyname}	${isnull} 	${dfval}
-         ) WITH STRUCTURE = X100, PARTITION=(HASH ON ${clname} 5 PARTITIONS);
+            ${clname}	${tyname}	${isnull} 	${dfval} 
+			) WITH STRUCTURE = X100, PARTITION=(HASH ON ${clname} 5 PARTITIONS);
        </create>
        <create id="viw">
          DROP VIEW IF EXISTS ${scname}.${tbname}; 

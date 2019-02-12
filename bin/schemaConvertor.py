@@ -17,6 +17,8 @@
 #
 #    History
 #    cooda09    28-01-19       Use of --mapping flag and change to precision precoessing
+#    cooda09    11-02-19       Schema owner of 'ontime' was hardcoded.
+#                              Substitute processing was giving an error
 
 import codecs
 import sys
@@ -305,7 +307,7 @@ class ConvertorUtil:
         rls = []
 
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="viwDefinition"))
-        sql = sql.substitute(schema_filter=self.params.source_schema)
+        sql = sql.safe_substitute(schema_filter=self.params.source_schema)
         s = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="viw").strip()
 
         # START View
@@ -382,9 +384,10 @@ class ConvertorUtil:
         print self.params.source_schema
         print source_connector.dbtype
         print target_db_type
-		
-        #sql = sql.substitute(schema_filter=self.params.source_schema)
-        sql = sql.substitute(schema_filter='ontime')
+        sql = sql.safe_substitute(schema_filter=self.params.source_schema)
+        #line above was sql = sql.substitute(schema_filter=self.params.source_schema)
+        #sql = sql.safe_substitute(schema_filter='ontime')
+        #line above was sql = sql.substitute(schema_filter='ontime')
         self.logger.debug(sql)
         ddl = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="uk").strip()
 
@@ -441,7 +444,7 @@ class ConvertorUtil:
         rls = []
 
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="fkDefinition"))
-        sql = sql.substitute(schema_filter=self.params.source_schema)
+        sql = sql.safe_substitute(schema_filter=self.params.source_schema)
 
         ddl = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="fk").strip()
 
@@ -516,7 +519,7 @@ class ConvertorUtil:
         rls = []
 
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="ixDefinition"))
-        sql = sql.substitute(schema_filter=self.params.source_schema)
+        sql = sql.safe_substitute(schema_filter=self.params.source_schema)
 
         ddl = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="ix").strip()
 

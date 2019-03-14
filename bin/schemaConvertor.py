@@ -222,7 +222,7 @@ class ConvertorUtil:
                 is_new_table = True
 
             if is_new_table:
-                s += held_structure
+                s += held_structure + " "
                 held_structure = ""
 
             if (is_new_schema or is_new_table) and len(rls) > 0:
@@ -381,9 +381,6 @@ class ConvertorUtil:
         self.logger.debug(self.params.source_schema)
         self.logger.debug(source_connector.dbtype)
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="ukDefinition"))
-        print self.params.source_schema
-        print source_connector.dbtype
-        print target_db_type
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
         #line above was sql = sql.substitute(schema_filter=self.params.source_schema)
         #sql = sql.safe_substitute(schema_filter='ontime')

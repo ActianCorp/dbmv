@@ -57,14 +57,14 @@
       );
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	${cstype} ( ${clname} )
+      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	${cstype} ( ${clname} );
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	FOREIGN KEY ( ${clname} )
       	REFERENCES ${rtbname} ( ${rclname} );
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${ixname}( ${clname} ) ON ${tbname} 
+      CREATE ${ixuniq} INDEX ${ixname}( ${clname} ) ON ${tbname};
     </create>
   </teradata>
 
@@ -163,14 +163,14 @@
       );
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	${cstype} ( ${clname} )
+      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	${cstype} ( ${clname} );
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	FOREIGN KEY ( ${clname} )
       	REFERENCES ${rtbname} ( ${rclname} );
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${ixname}( ${clname} ) ON ${tbname} 
+      CREATE ${ixuniq} INDEX ${ixname}( ${clname} ) ON ${tbname} ;
     </create>
   </oracle>
 
@@ -247,14 +247,14 @@
       );
     </create>
     <create id="uk">
-      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
     </create>
     <create id="fk">
       ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
       	REFERENCES ${rscname}.${rtbname} ( ${rclname} );
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${ixname} ON ${scname}.${tbname} ( ${clname} )
+      CREATE ${ixuniq} INDEX ${ixname} ON ${scname}.${tbname} ( ${clname} );
     </create>
   </mysql>
 
@@ -333,7 +333,7 @@
       	REFERENCES ${rtbname} ( ${rclname} );
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
+      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} );
     </create>
   </db2>
 
@@ -523,6 +523,28 @@
         AND   k.position_in_unique_constraint IS NULL
         ORDER BY 1, 2, 3, k.ordinal_position
     </select>
+	<select id="viwDefinition"> 
+      SELECT nc.nspname  AS scname,
+          c.relname  AS viwname,
+          CASE WHEN pg_has_role(c.relowner, 'USAGE')
+               THEN pg_get_viewdef(c.oid)
+               ELSE null END AS viwdef,
+         'NONE'  AS check_option,
+         CASE WHEN EXISTS (SELECT 1 FROM pg_rewrite WHERE ev_class = c.oid AND ev_type = '2' AND is_instead)
+                   AND EXISTS (SELECT 1 FROM pg_rewrite WHERE ev_class = c.oid AND ev_type = '4' AND is_instead)
+              THEN 'YES'
+              ELSE 'NO' END AS viwupd
+      FROM pg_namespace nc, pg_class c
+      WHERE c.relnamespace = nc.oid
+          AND c.relkind = 'v'
+          AND (NOT pg_is_other_temp_schema(nc.oid))
+          AND (pg_has_role(c.relowner, 'USAGE')
+               OR has_table_privilege(c.oid, 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+               OR has_any_column_privilege(c.oid, 'SELECT, INSERT, UPDATE, REFERENCES') )
+          AND nc.nspname  NOT IN ( 'information_schema', 'pg_catalog')
+          AND c.relname != 'views'
+          ORDER BY 1,2,3
+    </select>
     <select id="ixDefinition">
        SELECT CASE WHEN tsh.nspname = 'public' THEN current_user ELSE tsh.nspname END as "scname", 
               t.relname  as tbname, 
@@ -533,6 +555,7 @@
               a.attname   as cname
        FROM  pg_namespace tsh, pg_class t, pg_class i, pg_namespace ish, pg_index ix, pg_attribute a
        WHERE t.relnamespace  = tsh.oid
+	   AND   tsh.nspname NOT IN ( 'information_schema', 'pg_catalog')
        AND   t.relkind       = 'r'
        AND   t.oid           = ix.indrelid
        AND   ix.indisunique  = 'f'
@@ -552,7 +575,7 @@
       );
     </create>
     <create id="uk">
-      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
     </create>
     <create id="fk">
       ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
@@ -573,7 +596,7 @@
       ) DISTRIBUTED RANDOMLY;
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
@@ -594,7 +617,7 @@
       )
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
@@ -615,11 +638,11 @@
       )
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rtbname} ( ${rclname} )
+      	REFERENCES ${rtbname} ( ${rclname} );
     </create>
     <create id="ix">
       CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
@@ -635,7 +658,7 @@
       )
     </create>
     <create id="uk">
-      ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+      ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
     </create>
     <create id="fk">
     </create>
@@ -722,14 +745,14 @@
       )
     </create>
     <create id="uk">
-      ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+      ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
     </create>
     <create id="fk">
       ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rscname}.${rtbname} ( ${rclname} )
+      	REFERENCES ${rscname}.${rtbname} ( ${rclname} );
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${iscname}.${ixname} ON ${scname}.${tbname} ( ${clname} )
+      CREATE ${ixuniq} INDEX ${iscname}.${ixname} ON ${scname}.${tbname} ( ${clname} );
     </create>
    </iq>  
 
@@ -743,14 +766,14 @@
          )
       </create>
       <create id="uk">
-         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
       </create>
       <create id="fk">
          ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rscname}.${rtbname} ( ${rclname} )
+      	REFERENCES ${rscname}.${rtbname} ( ${rclname} );
       </create>
       <create id="ix">
-         CREATE ${ixuniq} INDEX ${iscname}.${ixname} ON ${scname}.${tbname} ( ${clname} )
+         CREATE ${ixuniq} INDEX ${iscname}.${ixname} ON ${scname}.${tbname} ( ${clname} );
       </create>
    </ase>  
    
@@ -761,12 +784,12 @@
       </create>
       <create id="pre">
          SET SESSION AUTHORIZATION ${scname};
-         SET INSERTMODE ${insert_mode}
+         SET INSERTMODE ${insert_mode};
       </create>
       <create id="tb">
          CREATE TABLE ${scname}.${tbname} (
             ${clname}	${tyname}	${isnull} 	${dfval}
-         )
+         );
        </create>
       <create id="drop">
          DROP TABLE IF EXISTS ${scname}.${tbname}; 
@@ -776,14 +799,14 @@
        </create>
        <create id="seq">
          CREATE SEQUENCE ${scname}.${seqname} `
-            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}         
+            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}  ;       
        </create>
       <create id="uk">
-         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} )
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} );
       </create>
       <create id="fk">
          ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-         REFERENCES ${rscname}.${rtbname} ( ${rclname} )
+         REFERENCES ${rscname}.${rtbname} ( ${rclname} );
       </create>
       <create id="ix">
       </create>
@@ -815,14 +838,14 @@
        </create>
        <create id="seq">
          CREATE SEQUENCE ${scname}.${seqname} `
-            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}         
+            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype} ;        
        </create>
       <create id="uk">
-         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} )
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} );
       </create>
       <create id="fk">
          ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-         REFERENCES ${rscname}.${rtbname} ( ${rclname} )
+         REFERENCES ${rscname}.${rtbname} ( ${rclname} );
       </create>
       <create id="ix">
       </create>
@@ -854,14 +877,14 @@
        </create>
        <create id="seq">
          CREATE SEQUENCE ${scname}.${seqname} `
-            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}         
+            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype} ;        
        </create>
       <create id="uk">
-         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} )
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} );
       </create>
       <create id="fk">
          ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-         REFERENCES ${rscname}.${rtbname} ( ${rclname} )
+         REFERENCES ${rscname}.${rtbname} ( ${rclname} );
       </create>
       <create id="ix">
       </create>
@@ -894,18 +917,18 @@
        </create>
        <create id="seq">
          CREATE SEQUENCE ${scname}.${seqname} `
-            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}         
+            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}       ;  
        </create>
       <create id="uk">
-	     ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} )
+	     ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} );
       </create>
       <create id="fk">
 	     
          ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-         REFERENCES ${rscname}.${rtbname} ( ${rclname} )
+         REFERENCES ${rscname}.${rtbname} ( ${rclname} );
       </create>
       <create id="ix">
-	     CREATE ${ixuniq} INDEX ${scname}.${ixname} ON ${scname}.${tbname} ( ${clname} )
+	     CREATE ${ixuniq} INDEX ${scname}.${ixname} ON ${scname}.${tbname} ( ${clname} );
       </create>
       <load id="cmd">
          vwload --table "${scname}.${tbname}" --fdelim "${fdelim}" --quote "'" ${dbname} ${fname}
@@ -917,7 +940,82 @@
 		 DROP TABLE IF EXISTS ${scname}.dummy_${tbname};
       </load>
   </ingres>
+  <zen>
+    <select id="tbDefinition">
+      SELECT c.TABLE_QUALIFIER as scname, c.TABLE_NAME as tbname, c.column_name as clname, c.type_name as  tyname, 
+             c.PRECISION as precision, c.SCALE as scale,
+         CASE  WHEN c.nullable = 0 THEN 'NOT NULL'   END as isnull,
+        CASE  WHEN c."COLUMN_DEF"  != '' THEN  CASE  WHEN c."COLUMN_DEF" != 'NULL' THEN  c."COLUMN_DEF" ELSE NULL END ELSE '0' END as dfval
+        FROM   dbo.fSQLColumns ('${schema_filter}', NULL , null) c, 
+               dbo.fSQLTables ('${schema_filter}', null, null) t
+      WHERE  c.TABLE_NAME = t.TABLE_NAME 
+        AND  t.TABLE_TYPE = 'TABLE'  
+      ORDER BY c.TABLE_QUALIFIER, c.table_name, c.column_name, c.ORDINAL_POSITION
+    </select>
+    <select id="viwDefinition">
+      SELECT DISTINCT  (select distinct TABLE_QUALIFIER as scname from dbo.fSQLTables ('${schema_filter}', null, null)  ) scname, 
+      u."Xv$Name" viwname, CONCAT(CONCAT(CONCAT('CREATE VIEW ',"Xv$Name"),' AS '),"Xv$Misc") viwdef, 0 viwchk , 0 viwupd
+      FROM "X$View" u
+      WHERE "Xv$Misc" NOT LIKE '%X$%'
+      ORDER BY 1,2,3       
+    </select>
+    <select id="fkDefinition">
+      SELECT s.fktable_qualifier as scname, s.fktable_name  as tbname, s.fk_name as csname, 
+       s.fkcolumn_name as clname, 
+       s.pktable_qualifier rscname, s.pktable_name as rtbname, s.pkcolumn_name as rclname
+           FROM dbo.fSQLForeignKeys ('${schema_filter}',null,null) s
+           WHERE s.fktable_name NOT IN (select pktable_name from dbo.fsqlprimarykeys('${schema_filter}', '%'))
+           AND    ('${schema_filter}' = '' OR ('${schema_filter}' = s.fktable_qualifier))
+      ORDER BY 1,2,3
+    </select>
+    <select id="ukDefinition">
+     
+ SELECT  distinct s.table_qualifier as scname, s.table_name  as tbname, s.pk_name as csname,
+            'PRIMARY KEY' as cstype,
+            concat(concat(concat (
+            substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlprimarykeys ('${schema_filter}','%') c 
+                 WHERE c.key_seq = 1 and c.table_name = s.table_name),3,20), 
+            substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlprimarykeys ('${schema_filter}','%') c 
+            WHERE c.key_seq = 2 and c.table_name = s.table_name),1,20)),
+            ifnull(substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlprimarykeys ('${schema_filter}','%') c 
+            WHERE c.key_seq = 3 and c.table_name = s.table_name),1,20),'')),'"' ) as clname
+           FROM dbo.fsqlprimarykeys ('${schema_filter}','%') s
+           ORDER BY 1,2,3
+    </select>
+    <select id="ixDefinition">
 
+ SELECT  distinct s.table_qualifier as scname, s.table_name  as tbname, s.table_qualifier as iscname
+            s.index_name as ixname, 
+            'INDEX' as cstype,
+            concat(concat(concat (
+            substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlStatistics ('${schema_filter}','%') c 
+                 WHERE c.seq_in_index = 1 and c.table_name = s.table_name),3,20), 
+            substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlStatistics ('${schema_filter}','%') c 
+            WHERE c.seq_in_index = 2 and c.table_name = s.table_name),1,20)),
+            ifnull(substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlStatistics ('${schema_filter}','%') c 
+            WHERE c.seq_in_index = 3 and c.table_name = s.table_name),1,20),'')),'"' ) as clname
+           FROM dbo.fsqlStatistics ('${schema_filter}','%', 1) s
+           WHERE NON_UNIQUE = 1
+           ORDER BY 1,2,3
+
+      SELECT  s.name as iscname, i.name as ixname, 
+             CASE  WHEN i.type      = 2 THEN 'BTREE' ELSE CAST(i.type AS VARCHAR(2))  END as ixtype, 
+             CASE  WHEN i.is_unique = 1 THEN 'UNIQUE'                                 END as ixuniq,
+                c.name as cname
+      FROM   sys.schemas s, sys.objects o1,  sys.indexes i, sysindexkeys ik, syscolumns c
+      WHERE  o1.schema_id            = s.schema_id
+      AND    o1.type                 = 'U' 
+      AND    o1.object_id            = i.object_id
+      AND    i.is_primary_key       != 1
+      AND    i.is_unique_constraint != 1 
+      AND    i.index_id              = ik.indid
+      AND    i.object_id             = ik.id
+      AND    ik.id                   = c.id
+      AND    ik.colid                = c.colid
+      AND    ('${schema_filter}' = '' OR  '${schema_filter}' = s.name)
+      ORDER BY 1,2,3, ik.keyno
+    </select>
+   </zen>
 </dbmv>
 
 

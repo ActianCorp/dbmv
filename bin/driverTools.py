@@ -275,7 +275,7 @@ class dbconnector:
             isSelect = True if pattern.search(p_sql) else False
 
             # encodedValue = p_sql.encode('ascii', 'replace')
-			encodedValue = p_sql
+            encodedValue = p_sql
             self.cursor.execute(encodedValue)
 
             if isSelect and self.dbtype in ["db2", "netezza", "teradata", "ingres", "vector", "vectorh", "vectorc", "actianx", "asa", "iq", "hana"]:

@@ -786,7 +786,7 @@ class ConvertorUtil:
                 select = 'SELECT '
                 selfrom = ' FROM ' + s
 
-                s = self.quote(table_name) if source_schema is None else self.quote(target_schema) + '.' + self.quote(
+                s = self.quote(table_name) if target_schema is None else self.quote(target_schema) + '.' + self.quote(
                     table_name)
                 table_name = s
                 insert = 'INSERT INTO ' + s + ' VALUES ('

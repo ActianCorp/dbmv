@@ -35,7 +35,7 @@
       FROM  DBC.indices
       WHERE CreatorName  = USER
       AND  IndexType  IN ('K', 'U')
-      ORDER BY 1,2,3,ColumnPosition
+      ORDER BY 1,2,3,ColumnPosition:
     </select>
     <select id="ixDefinition">
       SELECT DatabaseName as scname, TableName as tbname, DatabaseName as iscname, IndexName as ixname, 
@@ -54,17 +54,17 @@
     <create id="tb">
       CREATE MULTISET TABLE "${tbname}" (
          "${clname}"	${tyname}	${isnull} 	${dfval}
-      );
+      )
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	${cstype} ( ${clname} );
+      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	${cstype} ( ${clname} ):
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rtbname} ( ${rclname} );
+      	REFERENCES ${rtbname} ( ${rclname} )
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${ixname}( ${clname} ) ON ${tbname};
+      CREATE ${ixuniq} INDEX ${ixname}( ${clname} ) ON ${tbname} 
     </create>
   </teradata>
 
@@ -160,17 +160,17 @@
     <create id="tb">
       CREATE MULTISET TABLE "${tbname}" (
          "${clname}"	${tyname}	${isnull} 	${dfval}
-      );
+      )
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	${cstype} ( ${clname} );
+      ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	${cstype} ( ${clname} )
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT "${csname}"	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rtbname} ( ${rclname} );
+      	REFERENCES ${rtbname} ( ${rclname} )
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${ixname}( ${clname} ) ON ${tbname} ;
+      CREATE ${ixuniq} INDEX ${ixname}( ${clname} ) ON ${tbname} 
     </create>
   </oracle>
 
@@ -244,17 +244,17 @@
     <create id="tb">
       CREATE TABLE ${scname}.${tbname} (
          ${clname}	${tyname}	${isnull}	
-      );
+      )
     </create>
     <create id="uk">
-      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
     </create>
     <create id="fk">
       ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rscname}.${rtbname} ( ${rclname} );
+      	REFERENCES ${rscname}.${rtbname} ( ${rclname} )
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${ixname} ON ${scname}.${tbname} ( ${clname} );
+      CREATE ${ixuniq} INDEX ${ixname} ON ${scname}.${tbname} ( ${clname} )
     </create>
   </mysql>
 
@@ -318,7 +318,7 @@
     </select>
 
     <create id="sch">
-      CREATE DATABASE ${scname};
+      CREATE DATABASE ${scname}
     </create>
     <create id="tb">
       CREATE TABLE "${tbname}" (
@@ -326,14 +326,14 @@
       )
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rtbname} ( ${rclname} );
+      	REFERENCES ${rtbname} ( ${rclname} )
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} );
+      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
     </create>
   </db2>
 
@@ -438,22 +438,22 @@
 
   <netezza>
     <create id="sch">
-      CREATE DATABASE ${scname};
+      CREATE DATABASE ${scname}
     </create>
     <create id="tb">
       CREATE TABLE ${tbname} (
          ${clname}	${tyname}	${isnull} 	${dfval}
-      );
+      )
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rtbname} ( ${rclname} );
+      	REFERENCES ${rtbname} ( ${rclname} )
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} );
+      CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
     </create>
   </netezza>
 
@@ -524,7 +524,7 @@
         ORDER BY 1, 2, 3, k.ordinal_position
     </select>
 	<select id="viwDefinition"> 
-      SELECT nc.nspname  AS scname,
+         SELECT nc.nspname  AS scname,
           c.relname  AS viwname,
           CASE WHEN pg_has_role(c.relowner, 'USAGE')
                THEN pg_get_viewdef(c.oid)
@@ -534,8 +534,8 @@
                    AND EXISTS (SELECT 1 FROM pg_rewrite WHERE ev_class = c.oid AND ev_type = '4' AND is_instead)
               THEN 'YES'
               ELSE 'NO' END AS viwupd
-      FROM pg_namespace nc, pg_class c
-      WHERE c.relnamespace = nc.oid
+          FROM pg_namespace nc, pg_class c
+          WHERE c.relnamespace = nc.oid
           AND c.relkind = 'v'
           AND (NOT pg_is_other_temp_schema(nc.oid))
           AND (pg_has_role(c.relowner, 'USAGE')
@@ -544,7 +544,7 @@
           AND nc.nspname  NOT IN ( 'information_schema', 'pg_catalog')
           AND c.relname != 'views'
           ORDER BY 1,2,3
-    </select>
+</select>
     <select id="ixDefinition">
        SELECT CASE WHEN tsh.nspname = 'public' THEN current_user ELSE tsh.nspname END as "scname", 
               t.relname  as tbname, 
@@ -567,19 +567,19 @@
        ORDER BY 1,2,3, a.attnum
     </select>
     <create id="sch">
-      CREATE SCHEMA ${scname};
+      CREATE SCHEMA ${scname}
     </create>
     <create id="tb">
       CREATE TABLE ${scname}.${tbname} (
          ${clname}	${tyname}	${isnull} 	${dfval}
-      );
+      )
     </create>
     <create id="uk">
-      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+      ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
     </create>
     <create id="fk">
       ALTER TABLE ${scname}.${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${scname}.${rtbname} ( ${rclname} );
+      	REFERENCES ${scname}.${rtbname} ( ${rclname} )
     </create>
     <create id="ix">
       CREATE ${ixuniq} INDEX ${ixname} ON ${scname}.${tbname} ( ${clname} )
@@ -588,19 +588,19 @@
 
   <greenplum>
     <create id="sch">
-      create database ${scname};
+      create database ${scname}
     </create>
     <create id="tb">
       CREATE TABLE ${tbname} (
          ${clname}	${tyname}	${isnull} 	${dfval}
-      ) DISTRIBUTED RANDOMLY;
+      ) DISTRIBUTED RANDOMLY
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rtbname} ( ${rclname} );
+      	REFERENCES ${rtbname} ( ${rclname} )
     </create>
     <create id="ix">
       CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
@@ -617,11 +617,11 @@
       )
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rtbname} ( ${rclname} );
+      	REFERENCES ${rtbname} ( ${rclname} )
     </create>
     <create id="ix">
       CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
@@ -638,11 +638,11 @@
       )
     </create>
     <create id="uk">
-      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+      ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
     </create>
     <create id="fk">
       ALTER TABLE ${tbname}	ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rtbname} ( ${rclname} );
+      	REFERENCES ${rtbname} ( ${rclname} )
     </create>
     <create id="ix">
       CREATE ${ixuniq} INDEX ${ixname} ON ${tbname} ( ${clname} )
@@ -658,7 +658,7 @@
       )
     </create>
     <create id="uk">
-      ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+      ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
     </create>
     <create id="fk">
     </create>
@@ -745,14 +745,14 @@
       )
     </create>
     <create id="uk">
-      ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+      ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
     </create>
     <create id="fk">
       ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rscname}.${rtbname} ( ${rclname} );
+      	REFERENCES ${rscname}.${rtbname} ( ${rclname} )
     </create>
     <create id="ix">
-      CREATE ${ixuniq} INDEX ${iscname}.${ixname} ON ${scname}.${tbname} ( ${clname} );
+      CREATE ${ixuniq} INDEX ${iscname}.${ixname} ON ${scname}.${tbname} ( ${clname} )
     </create>
    </iq>  
 
@@ -766,47 +766,47 @@
          )
       </create>
       <create id="uk">
-         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} );
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	${cstype} ( ${clname} )
       </create>
       <create id="fk">
          ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-      	REFERENCES ${rscname}.${rtbname} ( ${rclname} );
+      	REFERENCES ${rscname}.${rtbname} ( ${rclname} )
       </create>
       <create id="ix">
-         CREATE ${ixuniq} INDEX ${iscname}.${ixname} ON ${scname}.${tbname} ( ${clname} );
+         CREATE ${ixuniq} INDEX ${iscname}.${ixname} ON ${scname}.${tbname} ( ${clname} )
       </create>
    </ase>  
    
   
    <vectorwise>
       <create id="sch">
-         SET SESSION AUTHORIZATION ${scname};
+         SET SESSION AUTHORIZATION ${scname}
       </create>
       <create id="pre">
-         SET SESSION AUTHORIZATION ${scname};
-         SET INSERTMODE ${insert_mode};
+         SET SESSION AUTHORIZATION ${scname}
+         SET INSERTMODE ${insert_mode}
       </create>
       <create id="tb">
          CREATE TABLE ${scname}.${tbname} (
             ${clname}	${tyname}	${isnull} 	${dfval}
-         );
+         )
        </create>
       <create id="drop">
-         DROP TABLE IF EXISTS ${scname}.${tbname}; 
+         DROP TABLE IF EXISTS ${scname}.${tbname}
       </create>
        <create id="viw">
-         DROP VIEW IF EXISTS ${scname}.${tbname};
+         DROP VIEW IF EXISTS ${scname}.${tbname}
        </create>
        <create id="seq">
          CREATE SEQUENCE ${scname}.${seqname} `
-            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}  ;       
+            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}
        </create>
       <create id="uk">
-         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} );
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} )
       </create>
       <create id="fk">
          ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-         REFERENCES ${rscname}.${rtbname} ( ${rclname} );
+         REFERENCES ${rscname}.${rtbname} ( ${rclname} )
       </create>
       <create id="ix">
       </create>
@@ -819,33 +819,33 @@
    </vectorwise>
    <vector>
       <create id="sch">
-         SET SESSION AUTHORIZATION ${scname};
+         SET SESSION AUTHORIZATION ${scname}
       </create>
       <create id="pre">
-         SET SESSION AUTHORIZATION ${scname};
-         SET INSERTMODE ${insert_mode};
+         SET SESSION AUTHORIZATION ${scname}
+         SET INSERTMODE ${insert_mode}
       </create>
       <create id="tb">
          CREATE TABLE ${scname}.${tbname} (
             ${clname}	${tyname}	${isnull} 	${dfval}
-         ) WITH STRUCTURE = X100, NOPARTITION;
+         ) WITH STRUCTURE = X100, NOPARTITION
        </create>
        <create id="drop">
-         DROP TABLE IF EXISTS ${scname}.${tbname};
+         DROP TABLE IF EXISTS ${scname}.${tbname}
        </create>
        <create id="viw">
-         DROP VIEW IF EXISTS ${scname}.${tbname};
+         DROP VIEW IF EXISTS ${scname}.${tbname}
        </create>
        <create id="seq">
          CREATE SEQUENCE ${scname}.${seqname} `
-            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype} ;        
+            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}
        </create>
       <create id="uk">
-         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} );
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} )
       </create>
       <create id="fk">
          ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-         REFERENCES ${rscname}.${rtbname} ( ${rclname} );
+         REFERENCES ${rscname}.${rtbname} ( ${rclname} )
       </create>
       <create id="ix">
       </create>
@@ -858,11 +858,11 @@
    </vector>
    <vectorh>
       <create id="sch">
-         SET SESSION AUTHORIZATION ${scname};
+         SET SESSION AUTHORIZATION ${scname}
       </create>
       <create id="pre">
-         SET SESSION AUTHORIZATION ${scname};
-         SET INSERTMODE ${insert_mode};
+         SET SESSION AUTHORIZATION ${scname}
+         SET INSERTMODE ${insert_mode}
       </create>
       <create id="drop">
          DROP TABLE IF EXISTS ${scname}.${tbname}; 
@@ -870,21 +870,21 @@
       <create id="tb">
          CREATE TABLE ${scname}.${tbname} (
             ${clname}	${tyname}	${isnull} 	${dfval} 
-			) WITH STRUCTURE = X100, PARTITION=(HASH ON ${clname} 5 PARTITIONS);
+			) WITH STRUCTURE = X100, PARTITION=(HASH ON ${clname} 5 PARTITIONS)
        </create>
        <create id="viw">
          DROP VIEW IF EXISTS ${scname}.${tbname}; 
        </create>
        <create id="seq">
          CREATE SEQUENCE ${scname}.${seqname} `
-            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype} ;        
+            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}         
        </create>
       <create id="uk">
-         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} );
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} )
       </create>
       <create id="fk">
          ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-         REFERENCES ${rscname}.${rtbname} ( ${rclname} );
+         REFERENCES ${rscname}.${rtbname} ( ${rclname} )
       </create>
       <create id="ix">
       </create>
@@ -898,46 +898,46 @@
 
   <ingres>
         <create id="sch">
-         SET SESSION AUTHORIZATION ${scname};
+         SET SESSION AUTHORIZATION ${scname}
       </create>
       <create id="pre">
-         SET SESSION AUTHORIZATION ${scname};
-         SET INSERTMODE ${insert_mode};
+         SET SESSION AUTHORIZATION ${scname}
+         SET INSERTMODE ${insert_mode}
       </create>
       <create id="tb">
          CREATE TABLE ${scname}.${tbname} (
             ${clname}	${tyname}	${isnull} 	${dfval}
-         ) WITH STRUCTURE = HEAP;
+         ) WITH STRUCTURE = HEAP
        </create>
        <create id="drop">
-         DROP TABLE IF EXISTS ${scname}.${tbname};
+         DROP TABLE IF EXISTS ${scname}.${tbname}
        </create>
        <create id="viw">
-         DROP VIEW IF EXISTS ${scname}.${tbname};
+         DROP VIEW IF EXISTS ${scname}.${tbname}
        </create>
        <create id="seq">
          CREATE SEQUENCE ${scname}.${seqname} `
-            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}       ;  
+            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}         
        </create>
       <create id="uk">
-	     ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} );
+	     ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} )
       </create>
       <create id="fk">
 	     
          ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-         REFERENCES ${rscname}.${rtbname} ( ${rclname} );
+         REFERENCES ${rscname}.${rtbname} ( ${rclname} )
       </create>
       <create id="ix">
-	     CREATE ${ixuniq} INDEX ${scname}.${ixname} ON ${scname}.${tbname} ( ${clname} );
+	     CREATE ${ixuniq} INDEX ${scname}.${ixname} ON ${scname}.${tbname} ( ${clname} )
       </create>
       <load id="cmd">
          vwload --table "${scname}.${tbname}" --fdelim "${fdelim}" --quote "'" ${dbname} ${fname}
       </load>
       <load id="cpvwl">
-	     CREATE TABLE ${scname}.dummy_${tbname} AS SELECT * FROM  ${scname}.${tbname} WHERE 1 = 0 WITH STRUCTURE = X100;
-         COPY ${scname}.dummy_${tbname} VWLOAD FROM '${fname}' WITH ${attrib} ${attribsep} fdelim='${fdelim}', quote='"' , WORK_DIR='${wdname}';
-         INSERT INTO "${scname}.${tbname}" SELECT * FROM ${scname}.dummy_${tbname};
-		 DROP TABLE IF EXISTS ${scname}.dummy_${tbname};
+	     CREATE TABLE ${scname}.dummy_${tbname} AS SELECT * FROM  ${scname}.${tbname} WHERE 1 = 0 WITH STRUCTURE = X100
+         COPY ${scname}.dummy_${tbname} VWLOAD FROM '${fname}' WITH ${attrib} ${attribsep} fdelim='${fdelim}', quote='"' , WORK_DIR='${wdname}'
+         INSERT INTO "${scname}.${tbname}" SELECT * FROM ${scname}.dummy_${tbname}
+		 DROP TABLE IF EXISTS ${scname}.dummy_${tbname}
       </load>
   </ingres>
   <zen>

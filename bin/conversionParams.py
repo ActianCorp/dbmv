@@ -53,7 +53,7 @@ class ConversionParameters:
         self.src = None
         self.dest = None
         self.quote = None
-        self.command_separator = ''
+        self.command_separator = ';'
         self.index_separator = ''
         self.maxrows = 100000
         self.batchsize = 500
@@ -68,7 +68,8 @@ class ConversionParameters:
         # only select the tables for a given schema
         self.source_schema = ''
         # change the schema name to this one
-        self.target_schema = None
+        # self.target_schema = None
+        self.target_schema = ''
         # do not migrate columns of data we cannot handle
         self.skip_unsupported = False
         # warn about columns of data we cannot handle

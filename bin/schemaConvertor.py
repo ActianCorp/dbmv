@@ -16,7 +16,7 @@
 #    limitations under the License.
 #
 #    History
-#    cooda09    28-01-19       Use of --mapping flag and change to precision precoessing
+#    cooda09    28-01-19       Use of --mapping flag and change to precision processing
 #    cooda09    11-02-19       Schema owner of 'ontime' was hardcoded.
 #                              Substitute processing was giving an error
 
@@ -698,7 +698,7 @@ class ConvertorUtil:
         # Run precondition script if found (e.g. this can be used to setup session authorization)
         pres = self.get_xml_data(dbtype=target_connector.dbtype, sql="create", identifier="sch")
         sch = Template(pres).substitute(scname=self.quote(self.params.get_target_schema("dbo")),
-                                        insert_mode=self.params.insert_mode)
+                                        insert_mode=self.params.insert_mode).strip()
 
         # do not alter DB in trial mode
         if not self.params.trial:

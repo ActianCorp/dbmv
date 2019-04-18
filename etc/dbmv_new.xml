@@ -31,7 +31,8 @@
              (CASE  IndexType WHEN 'K'  THEN 'PRIMARY KEY'
               ELSE                           'UNIQUE'
               END) as cstype,
-             ColumnName as clname
+             ColumnName as clname,
+             '' as delrule
       FROM  DBC.indices
       WHERE CreatorName  = USER
       AND  IndexType  IN ('K', 'U')
@@ -107,7 +108,11 @@
     </select>
     <select id="fkDefinition">
       SELECT cl1.owner  as scname, cl1.table_name  as tbname, cl1.constraint_name as csname, cl1.column_name as clname, 
-             cl2.owner as rscname, cl2.table_name as rtbname, cl2.column_name as rclname
+             cl2.owner as rscname, cl2.table_name as rtbname, cl2.column_name as rclname,
+             cast((CASE delete_rule WHEN 'SET NULL' THEN 'ON DELETE SET NULL' 
+                                     WHEN 'NO ACTION' THEN '' 
+                                     WHEN 'CASCADE' THEN 'ON DELETE CASCADE ' 
+                                     ELSE '' END) as varchar2(20)) as delrule
       FROM   all_constraints cs, all_cons_columns cl1, all_cons_columns cl2
       WHERE  cs.owner             = USER
       AND    cs.constraint_type   = 'R'
@@ -124,7 +129,11 @@
              cast((CASE  cs.constraint_type WHEN 'P'  THEN 'PRIMARY KEY'
               ELSE                                    'UNIQUE'
               END) as varchar2(20)) as cstype,
-              cast(cl.column_name as varchar2(40)) as clname
+              cast(cl.column_name as varchar2(40)) as clname,
+              cast((CASE delete_rule WHEN 'SET NULL' THEN 'ON DELETE SET NULL' 
+                                     WHEN 'NO ACTION' THEN '' 
+                                     WHEN 'CASCADE' THEN 'ON DELETE CASCADE ' 
+                                     ELSE '' END) as varchar2(20)) as delrule
       FROM  all_constraints cs, all_cons_columns cl 
       WHERE cs.owner            = USER
       AND   cs.constraint_type IN ('P', 'U')
@@ -221,7 +230,8 @@
                 ELSE constraint_name
              END) as csname,
              (CASE constraint_name WHEN 'PRIMARY' THEN 'PRIMARY KEY' ELSE 'UNIQUE' END) as cstype,
-             column_name as clname
+             column_name as clname,
+             '' as delrule
        FROM  information_schema.key_column_usage
        WHERE table_schema IN (SELECT db FROM information_schema.processlist)
        AND   position_in_unique_constraint IS NULL
@@ -297,6 +307,7 @@
                 WHEN i.uniquerule IN ('U') THEN 'UNIQUE'
                 WHEN i.uniquerule IN ('P') THEN 'PRIMARY KEY'
              END as cstype, k.colname as clname
+             '' as delrule
       FROM   sysibm.sysindexes i, sysibm.syskeycoluse k
       WHERE  i.creator = k.tbcreator
       AND    i.tbname  = k.tbname
@@ -511,7 +522,8 @@
                 ELSE k.constraint_name
              END) as csname,
              c.constraint_type as cstype,
-             k.column_name as clname
+             k.column_name as clname,
+             '' as delrule
         FROM  information_schema.key_column_usage k,
              information_schema.table_constraints c
         WHERE k.table_schema NOT IN ( 'information_schema', 'pg_catalog')
@@ -704,7 +716,8 @@
                 ELSE cs.constraint_name
               END) as csname,
              (CASE cs.constraint_type WHEN 'P' THEN 'PRIMARY KEY' ELSE 'UNIQUE' END) as cstype,
-             c.column_name as clname
+             c.column_name as clname,
+             '' as delrule
        FROM  sys.systable t, sys.sysconstraint cs, sys.sysidx i, sys.sysidxcol cx, sys.syscolumn c
        WHERE t.creator     = user_id(USER)
        AND   t.object_id   = cs.table_object_id
@@ -841,11 +854,13 @@
             ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}
        </create>
       <create id="uk">
-         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} )
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname} ${cstype} ( ${clname} ) ${delname}
+
       </create>
       <create id="fk">
          ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}	FOREIGN KEY ( ${clname} )
-         REFERENCES ${rscname}.${rtbname} ( ${rclname} )
+         REFERENCES ${rscname}.${rtbname} ( ${rclname} )  ${delname}
+
       </create>
       <create id="ix">
       </create>

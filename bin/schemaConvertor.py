@@ -19,6 +19,8 @@
 #    cooda09    28-01-19       Use of --mapping flag and change to precision processing
 #    cooda09    11-02-19       Schema owner of 'ontime' was hardcoded.
 #                              Substitute processing was giving an error
+#    cooda09    17-04-19       Further fixes in definitions created for 
+#                              creating of vector views
 
 import codecs
 import sys
@@ -296,6 +298,7 @@ class ConvertorUtil:
             @:param source_connector
             @:param target_db_type
         """
+        self.logger.debug("Running generate_views processing")
         target_schema = ""
         source_schema = ""
         target_schemas = set()
@@ -339,6 +342,8 @@ class ConvertorUtil:
 
             viwdef = viwdef.replace(self.quote(source_schema), self.quote(target_schema))
             viwdef = viwdef.replace('[' + source_schema + ']', self.quote(target_schema))
+            viwdef = viwdef.replace('WITH READ ONLY','')
+            viwdef = viwdef.replace('with read only','')
 
             is_new_view = True
 
@@ -353,7 +358,8 @@ class ConvertorUtil:
 
             if is_new_view:
                 # The create view statement
-                s = viwdef
+                # s = viwdef
+                s = "drop view if exists "+viewname+self.params.command_separator+"\n"+viwdef
                 is_new_view = False
 
             s += "\n"
@@ -369,6 +375,7 @@ class ConvertorUtil:
             @:param source_connector
             @:param target_db_type
         """
+        self.logger.debug("Running generate_uk processing")
         source_schema = ""
         source_schema_prev = ""
         table_name = ""
@@ -398,9 +405,14 @@ class ConvertorUtil:
 
             source_schema = row[0]
             table_name = row[1]
-            uk_name = row[2] + self.params.command_separator + row[1]
+            # uk_name = row[2] + self.params.command_separator + row[1]
+            uk_name = row[2] 
             uk_type = row[3]  # Constraint type
             col_names = row[4]  # Column Names
+            del_rule = row[5]  # Deletion Rule if provided else blank
+            if del_rule is None:
+                del_rule = ""
+
 
             if (source_schema_prev, table_name_prev, uk_name_prev) != (source_schema, table_name, uk_name):
                 source_schema_prev = source_schema
@@ -414,13 +426,17 @@ class ConvertorUtil:
 
                 target_schema = self.params.get_target_schema(source_schema)
                 s = Template(ddl)
-                s = s.substitute(scname=self.quote(target_schema), tbname=self.quote(table_name),
-                                 csname=self.quote(uk_name), cstype=uk_type,
+                s = s.substitute(scname=self.quote(target_schema), 
+                                 tbname=self.quote(table_name),
+                                 csname=self.quote(uk_name), 
+                                 cstype=uk_type,
+                                 delname=del_rule,
                                  clname=self.quote(col_names) + r'${clname}')
             else:
                 s = Template(s).substitute(clname=',' + self.quote(col_names) + r'${clname}')
 
         s = Template(s).substitute(clname='')
+##                                   delname=del_rule)
         rls.append(s + self.params.command_separator + "\n")
 
         return rls
@@ -429,8 +445,8 @@ class ConvertorUtil:
         """
             Generate foreign key based on src database and convert fk to the new database format.
             @:param source_connector
-            @:param target_db_type
-        """
+            @:param """
+        self.logger.debug("Running generate_fk processing")
         source_schema = ""
         source_schema_prev = ""
         table_name = ""
@@ -463,6 +479,9 @@ class ConvertorUtil:
                 1]  # Constraint names( Objects names )  must be unique in a schema
             col_name = row[3]
             ref_col_name = row[6]
+            del_rule = row[7]
+            if del_rule is None:
+                del_rule=""
 
             if (source_schema_prev, table_name_prev, fk_name_prev) != (source_schema, table_name, fk_name):
                 source_schema_prev = source_schema
@@ -489,6 +508,7 @@ class ConvertorUtil:
                 s = s.substitute(scname=self.quote(target_schema), tbname=self.quote(table_name),
                                  csname=self.quote(fk_name), clname=self.quote(col_name) + r'${clname}',
                                  rscname=self.quote(target_ref_schema), rtbname=self.quote(ref_table_name),
+                                 delname=self.quote(del_rule),
                                  rclname=self.quote(ref_col_name) + r'${rclname}')
             else:
                 s = Template(s).substitute(clname=',' + self.quote(col_name) + r'${clname}',
@@ -505,6 +525,8 @@ class ConvertorUtil:
             @:param source_connector
             @:param target_db_type
         """
+        self.logger.debug("Running generate_ix processing")
+        
         source_schema = ""
         source_schema_prev = ""
         table_name = ""
@@ -572,6 +594,7 @@ class ConvertorUtil:
             @:param source_connector
             @:param target_db_type
         """
+        self.logger.debug("Running unload_data processing")
         source_schema = ""
         source_schema_prev = ""
         table_name = ""

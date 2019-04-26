@@ -206,10 +206,11 @@ class ConvertorUtil:
                 self.logger.warn("Data type '" + row[3] + "' of column '" + row[1] + "." + row[
                     2] + "' is not supported. Skipping...")
                 continue
-
             if row[4] > self.params.charmax:
+                print self.params.charmax 
                 self.logger.warn(row[1] + '.' + row[2] + ' of type ' + row[3] +
-                                 ' : charmax is not acceptable (should be <= ' + str(
+                                 ' : ' + str(
+                    row[4]) + ' is not acceptable (should be <= ' + str(
                     self.params.charmax) + '). Skipping...')
                 continue
 
@@ -261,8 +262,8 @@ class ConvertorUtil:
             isnull = '' if row[6] is None else row[6]
             dfval = '' if row[7] is None else "DEFAULT " + row[7]
 
-            if dfval in typesMapping.ms2vw_default:
-                dfval = typesMapping.ms2vw_default[dfval]
+            if dfval in typesMapping.db2vw_default:
+                dfval = typesMapping.db2vw_default[dfval]
             if "NEXT VALUE FOR" in dfval:
                 dfval = ''
             # Substitute datatype by equivalent datatype
@@ -333,39 +334,43 @@ class ConvertorUtil:
                 rls.append(s + self.params.command_separator + "\n")
 
             viwdef = row[2]
-
             # Tried regex to swap CONVERT to CAST, but it's detecting too much of the text
             # regex = re.compile(r'CONVERT\((?P<type>[^,]*),(?P<value>[^,]*)\)', re.MULTILINE)
             # viwdef = regex.sub(r'CAST(\g<value> AS \g<type>)', viwdef)
-            for i in range(0, len(typesMapping.ms2vw_view) - 1):
-                viwdef = viwdef.replace(typesMapping.ms2vw_view[i][0], typesMapping.ms2vw_view[i][1])
 
-            viwdef = viwdef.replace(self.quote(source_schema), self.quote(target_schema))
-            viwdef = viwdef.replace('[' + source_schema + ']', self.quote(target_schema))
-            viwdef = viwdef.replace('WITH READ ONLY','')
-            viwdef = viwdef.replace('with read only','')
+            if viwdef is None : # when NULL 
+                print "viwdef is NONE"
+            else :
+                for i in range(0, len(typesMapping.db2vw_view) - 1):
+                
+                    viwdef = viwdef.replace(typesMapping.db2vw_view[i][0], typesMapping.db2vw_view[i][1])
 
-            is_new_view = True
+                viwdef = viwdef.replace(self.quote(source_schema), self.quote(target_schema))
+                viwdef = viwdef.replace('[' + source_schema + ']', self.quote(target_schema))
+            ##viwdef = viwdef.replace('WITH READ ONLY','')
+            ## viwdef = viwdef.replace('with read only','')
 
-            if is_new_schema:
-                s = Template(self.get_xml_data(dbtype=target_db_type, sql="create", identifier="sch").strip())
-                s = s.substitute(scname=self.quote(target_schema))
-                is_new_schema = False
-                if s != "":
-                    rls.append(s + self.params.command_separator + "\n")
-                else:
-                    rls.append(["\n", ''])
+                is_new_view = True
 
-            if is_new_view:
+                if is_new_schema:
+                    s = Template(self.get_xml_data(dbtype=target_db_type, sql="create", identifier="sch").strip())
+                    s = s.substitute(scname=self.quote(target_schema))
+                    is_new_schema = False
+                    if s != "":
+                        rls.append(s + self.params.command_separator + "\n")
+                    else:
+                        rls.append(["\n", ''])
+
+                if is_new_view:
                 # The create view statement
                 # s = viwdef
-                s = "drop view if exists "+viewname+self.params.command_separator+"\n"+viwdef
-                is_new_view = False
+                    s = "drop view if exists "+viewname+self.params.command_separator+"\n"+viwdef
+                    is_new_view = False
 
-            s += "\n"
-            viwdef = row[4]
+                s += "\n"
+                viwdef = row[4]
 
-        rls.append(s + self.params.command_separator + "\n")
+                rls.append(s + self.params.command_separator + "\n")
         return rls
 
     def generate_uk(self, source_connector, target_db_type):
@@ -801,16 +806,16 @@ class ConvertorUtil:
                     insert += ")"
                     select += selfrom
                     sqls.append((colnum, select, insert,
-                                 self.quote(table_name) if target_schema is None else self.quote(
-                                     target_schema) + '.' + self.quote(table_name)))
+                                 self.quote(table_name.strip()) if target_schema is None else self.quote(
+                                     target_schema.strip()) + '.' + self.quote(table_name.strip())))
 
-                s = self.quote(table_name) if source_schema is None else self.quote(source_schema) + '.' + self.quote(
-                    table_name)
+                s = self.quote(table_name.strip()) if source_schema is None else self.quote(source_schema.strip()) + '.' + self.quote(
+                    table_name.strip())
                 select = 'SELECT '
                 selfrom = ' FROM ' + s
 
-                s = self.quote(table_name) if target_schema is None else self.quote(target_schema) + '.' + self.quote(
-                    table_name)
+                s = self.quote(table_name.strip()) if target_schema is None else self.quote(target_schema.strip()) + '.' + self.quote(
+                    table_name.strip())
                 table_name = s
                 insert = 'INSERT INTO ' + s + ' VALUES ('
                 colnum = 0
@@ -826,7 +831,7 @@ class ConvertorUtil:
                 tyname.upper()]  # Translate datatypes according to translation table
 
             select += select_cast
-            select = select.replace('<COLNAME>', '"' + clname + '"')
+            select = select.replace('<COLNAME>', '"' + clname.strip() + '"')
             insert += insert_cast
             insert = insert.replace('<VALUE>', '<V' + str(colnum) + '>')
 
@@ -918,7 +923,8 @@ class ConvertorUtil:
             currentCounter = 0
             inserts = []
 
-            self.logger.debug("[Thread #%d] Loading..." % (connector[3]))
+            ## self.logger.debug("[Thread #%d] Loading..." % (connector[3]))
+            self.logger.debug("[Thread #%d] Loading... %s" % (connector[3] , table_name))
             sz = 0.0
             t1 = time.time()
 
@@ -926,6 +932,7 @@ class ConvertorUtil:
             if self.params.truncate and table_name != '':
                 # do not alter DB in trial mode
                 if not self.params.trial:
+                    print "Running in Trial Mode for %s" % table_name
                     target_connector.execute('MODIFY %s TO TRUNCATED' % table_name)
 
             insert_time = 0
@@ -997,8 +1004,8 @@ class ConvertorUtil:
 
             t2 = time.time()
             self.logger.debug(
-                "[Thread #%d] Total Rows inserted: %d - Elapsed time(s): %f (total insert time: %f), - Estimated size(MB): %f\n" % (
-                    connector[3], counter, t2 - t1, insert_time, sz / 1024 / 1024))
+                "[Thread #%d] Total Rows inserted into %s: %d - Elapsed time(s): %f (total insert time: %f), - Estimated size(MB): %f\n" % (
+                    connector[3],table_name, counter, t2 - t1, insert_time, sz / 1024 / 1024))
         except Exception as ex:
             self.logger.error("Failed to copy data for table'" + table_name + "'.")
             self.handle_error(ex)

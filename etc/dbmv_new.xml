@@ -3,21 +3,57 @@
 
   <teradata>
     <select id="tbDefinition">
-      SELECT   c.DatabaseName as "scname", c.TableName as "tbname", c.ColumnName as "clname", c.ColumnType as "tyname", 
+      SELECT        c.DatabaseName as "scname", cast(c.TableName as varchar(40)) as "tbname", c.ColumnName as "clname", 
+case when c.ColumnType = 'A1' THEN 'ARRAY'
+WHEN c.ColumnType = 'AN' THEN 'MULTI-DIMENSIONAL ARRAY' WHEN c.ColumnType = 'AT' THEN 'TIME' WHEN c.ColumnType = 'BF' THEN 'BYTE' WHEN c.ColumnType = 'BO' THEN 'BLOB'
+WHEN c.ColumnType = 'BV' THEN 'VARBYTE' WHEN c.ColumnType = 'CF' THEN 'CHARACTER' WHEN c.ColumnType = 'CO' THEN 'CLOB' WHEN c.ColumnType = 'CV' THEN 'VARCHAR'
+WHEN c.ColumnType = 'D' THEN 'DECIMAL' WHEN c.ColumnType = 'DA' THEN 'DATE' WHEN c.ColumnType = 'DH' THEN 'INTERVAL DAY TO HOUR' WHEN c.ColumnType = 'DM' THEN 'INTERVAL DAY TO MINUTE'
+WHEN c.ColumnType = 'DS' THEN 'INTERVAL DAY TO SECOND' WHEN c.ColumnType = 'DY' THEN 'INTERVAL DAY' WHEN c.ColumnType = 'F' THEN 'FLOAT' WHEN c.ColumnType = 'HM' THEN 'INTERVAL HOUR TO MINUTE'
+WHEN c.ColumnType = 'HS' THEN 'INTERVAL HOUR TO SECOND' WHEN c.ColumnType = 'HR' THEN 'INTERVAL HOUR' WHEN c.ColumnType = 'I' THEN 'INTEGER' WHEN c.ColumnType = 'I1' THEN 'BYTEINT'
+WHEN c.ColumnType = 'I2' THEN 'SMALLINT' WHEN c.ColumnType = 'I8' THEN 'BIGINT' WHEN c.ColumnType = 'JN' THEN 'JSON' WHEN c.ColumnType = 'MI' THEN 'INTERVAL MINUTE'
+WHEN c.ColumnType = 'MO' THEN 'INTERVAL MONTH' WHEN c.ColumnType = 'MS' THEN 'INTERVAL MINUTE TO SECOND' WHEN c.ColumnType = 'N' THEN 'NUMBER' WHEN c.ColumnType = 'PD' THEN 'PERIOD(DATE)'
+WHEN c.ColumnType = 'PM' THEN 'PERIOD(TIMESTAMP WITH TIME ZONE)' WHEN c.ColumnType = 'PS' THEN 'PERIOD(TIMESTAMP)' WHEN c.ColumnType = 'PT' THEN 'PERIOD(TIME)' WHEN c.ColumnType = 'PZ' THEN 'PERIOD(TIME WITH TIME ZONE)'
+WHEN c.ColumnType = 'SC' THEN 'INTERVAL SECOND' WHEN c.ColumnType = 'SZ' THEN 'TIMESTAMP WITH TIME ZONE' WHEN c.ColumnType = 'TS' THEN 'TIMESTAMP' WHEN c.ColumnType = 'TZ' THEN 'TIME WITH TIME ZONE'
+WHEN c.ColumnType = 'UT' THEN 'UDT Type' WHEN c.ColumnType = 'XM' THEN 'XML' WHEN c.ColumnType = 'YM' THEN 'INTERVAL YEAR TO MONTH' WHEN c.ColumnType = 'YR' THEN 'INTERVAL YEAR'
+WHEN c.ColumnType = '++' THEN 'TD_ANYTYPE' ELSE 'n/a'
+END  as "tyname",
                (CASE WHEN c.DecimalTotalDigits IS NOT NULL THEN c.DecimalTotalDigits
-                ELSE
-                   (CASE WHEN c.ColumnFormat LIKE 'X(%)' THEN Substr(c.ColumnFormat,3,(Characters(c.ColumnFormat)-3)) ELSE c.ColumnLength END)
-                END) as "precision", 
-               c.DecimalFractionalDigits as "scale", 
-               (CASE c.Nullable     WHEN 'N'      THEN 'NOT NULL'                  END)  as "isnull", 
-               (CASE WHEN c.DefaultValue IS  NOT NULL THEN  c.DefaultValue ELSE '' END) as "dfval"
+                ELSE c.ColumnLength END) as "precision", 
+               (CASE WHEN c.DecimalFractionalDigits  IS  NOT NULL THEN cast(c.DecimalFractionalDigits as varchar(10))    ELSE ''  END)  as "scale", 
+               (CASE c.Nullable     WHEN 'N'      THEN 'NOT NULL' ELSE '' END)  as "isnull", 
+               (CASE WHEN c.DefaultValue IS  NOT NULL THEN  
+                   (CASE WHEN TO_NUMBER(c.DefaultValue) IS NOT NULL THEN cast(c.DefaultValue as integer)  ELSE 
+                       (CASE WHEN UPPER(c.DefaultValue) = 'TIME' THEN 0 else 
+                           (CASE WHEN UPPER(c.DefaultValue) = 'CURRENT TIMESTAMP(6)' THEN 'CURRENT_TIMESTAMP' ELSE 
+                              (CASE WHEN LEFT(c.DefaultValue,2) = ''' ' THEN ''' ''' ELSE 
+                                  (CASE WHEN c.ColumnType = 'CF' THEN DECODE(c.DefaultValue, 'N', '''N''','Y','''Y''',c.DefaultValue) ELSE c.DefaultValue 
+                                   END) 
+                               END) 
+                            END) 
+                        END) 
+                    END) 
+               ELSE  c.DefaultValue END) as "dfval"
       FROM     DBC.Columns c, DBC.Tables t
       WHERE    c.CreatorName  = USER
-      AND      c.CreatorName  = t.CreatorName
+	  AND    ('${schema_filter}' = '' OR  '${schema_filter}' = c.DatabaseName)
+	  AND      c.CreatorName  = t.CreatorName
+       --   AND c.DatabaseName = 'vwuser'
       AND      c.DatabaseName = t.DatabaseName
       AND      c.TableName    = t.TableName
-      AND      t.TableKind    = 'T'
+      AND      c.columnType  NOT IN ('N')
+      AND      t.TableKind    IN ( 'O','T' )
       ORDER BY 1, 2, c.ColumnId
+    </select>
+	<select id="viwDefinition">
+      SELECT   t.DatabaseName as "scname", t.TableName as "viwname", v.CreateText as "viwdef", 'N' as "viewchk", 'N' as "viwupd"
+    
+      FROM     DBC.tvm v, DBC.Tables t
+      WHERE    (t.CreatorName  = 'DO NOT USE USER' OR t.CreatorName = '${schema_filter}')
+	  AND    ('${schema_filter}' = '' OR  '${schema_filter}' = t.DatabaseName)
+      AND      t.TableName    = v.TvmName
+      AND      t.TableKind    = 'V'
+      ORDER BY 1, 2, 3
+	  
     </select>
     <select id="fkDefinition">
       SELECT ChildDB  as scname , ChildTable  as tbname,  IndexName as csname, ChildKeyColumn as clname, 
@@ -35,16 +71,18 @@
              '' as delrule
       FROM  DBC.indices
       WHERE CreatorName  = USER
+	  AND    ('${schema_filter}' = '' OR  '${schema_filter}' = DatabaseName)
       AND  IndexType  IN ('K', 'U')
-      ORDER BY 1,2,3,ColumnPosition:
+      ORDER BY 1,2,3,ColumnPosition
     </select>
     <select id="ixDefinition">
       SELECT DatabaseName as scname, TableName as tbname, DatabaseName as iscname, IndexName as ixname, 
              IndexType    as ixtype, 
              NULL         as ixuniq,
              ColumnName   as cname 
-      FROM  DBC.indices
+      FROM  DBC.indices 
       WHERE CreatorName  = USER
+	  AND    ('${schema_filter}' = '' OR  '${schema_filter}' = DatabaseName)
       AND  IndexType  NOT IN ('K', 'U', 'J', '1', '2')
       AND  IndexName IS NOT NULL
       ORDER BY 1,2,3,ColumnPosition
@@ -448,6 +486,98 @@
    </mssql>
 
   <netezza>
+       <select id="DGCtbDefinition">
+      SELECT   c.owner as "scname", c.table_name as "tbname", c.column_name as "clname", 
+               (CASE 
+                   WHEN c.data_type IN ('NUMERIC', 'NUMBER', 'DECIMAL') 
+                        AND c.data_precision IS NULL AND c.data_scale IS NULL 
+                      THEN 'INTEGER'
+                   WHEN c.data_type IN ('FLOAT') AND c.data_precision &gt;= 10  AND c.data_precision &lt; 20
+                      THEN 'BINARY_DOUBLE'      
+                   WHEN c.data_type IN ('FLOAT') AND c.data_precision &lt; 10 
+                      THEN 'BINARY_FLOAT'      
+                   WHEN c.data_type LIKE 'TIMESTAMP%'
+                      THEN REGEXP_REPLACE(c.data_type, '\([0-9]+\)', '%')
+                ELSE 
+                   c.data_type
+                END) as "tyname", 
+               cast(NVL(c.data_precision, c.data_length) as number(6,0))            as "precision", 
+               cast(NVL(c.data_scale,0) as number(6,0))                             as "scale", 
+               DECODE(c.nullable, 'N', 'NOT NULL', 'Y', NULL)  as "isnull", 
+               c.data_default as "dfval"
+      FROM     all_tab_columns c, all_tables t
+      WHERE    c.owner      = USER
+      AND      c.owner      = t.owner
+      AND      c.table_name = t.table_name
+      AND      c.table_name NOT LIKE 'SYS_%'
+      AND      t.secondary  = 'N'
+      AND      t.nested     = 'NO'
+      ORDER BY 1, 2, c.column_id
+    </select>
+	  <select id="viwDefinition">
+      SELECT DISTINCT v.owner AS scname, v.viewname AS viwname, v.definition  AS viwdef, 'N' AS viwchk , 'N' AS viwupd
+      FROM _v_view v
+	  WHERE objtype= 'VIEW'
+      ORDER BY 1,2,3
+    </select>
+    <select id="DGCfkDefinition">
+      SELECT cl1.owner  as scname, cl1.table_name  as tbname, cl1.constraint_name as csname, cl1.column_name as clname, 
+             cl2.owner as rscname, cl2.table_name as rtbname, cl2.column_name as rclname,
+             cast((CASE delete_rule WHEN 'SET NULL' THEN 'ON DELETE SET NULL' 
+                                     WHEN 'NO ACTION' THEN '' 
+                                     WHEN 'CASCADE' THEN 'ON DELETE CASCADE ' 
+                                     ELSE '' END) as varchar2(20)) as delrule
+      FROM   all_constraints cs, all_cons_columns cl1, all_cons_columns cl2
+      WHERE  cs.owner             = USER
+      AND    cs.constraint_type   = 'R'
+      AND    cs.owner             = cl1.owner 
+      AND    cs.table_name        = cl1.table_name
+      AND    cs.constraint_name   = cl1.constraint_name
+      AND    cs.r_owner           = cl2.owner
+      AND    cs.r_constraint_name = cl2.constraint_name
+      AND    cl1.position         = cl2.position
+      ORDER BY 1, 2, 3, cl1.position
+    </select>
+    <select id="DGCukDefinition">
+      SELECT cast(lower(replace(cs.owner,'#','')) as varchar2(40))  as scname, cast(cs.table_name as varchar2(40)) as tbname, replace(cs.constraint_name,'.','') as csname, 
+             cast((CASE  cs.constraint_type WHEN 'P'  THEN 'PRIMARY KEY'
+              ELSE                                    'UNIQUE'
+              END) as varchar2(20)) as cstype,
+              cast(cl.column_name as varchar2(40)) as clname,
+              cast((CASE delete_rule WHEN 'SET NULL' THEN 'ON DELETE SET NULL' 
+                                     WHEN 'NO ACTION' THEN '' 
+                                     WHEN 'CASCADE' THEN 'ON DELETE CASCADE ' 
+                                     ELSE '' END) as varchar2(20)) as delrule
+      FROM  all_constraints cs, all_cons_columns cl 
+      WHERE cs.owner            = USER
+      AND   cs.constraint_type IN ('P', 'U')
+      AND   cs.constraint_name NOT LIKE 'BIN$%==%'
+      AND   cs.owner           = cl.owner
+      AND   cs.constraint_name = cl.constraint_name
+      AND   cs.table_name      = cl.table_name
+      ORDER BY 1, 2, 3, cl.position
+    </select>
+    <select id="DGCixDefinition">
+      SELECT ix.table_owner as scname, ix.table_name as tbname, ix.owner as iscname, ix.index_name as ixname, 
+             CASE  WHEN ix.index_type IN ('NORMAL', 'BITMAP') THEN 'BTREE' ELSE CAST(ix.index_type AS VARCHAR(2))  END as ixtype, 
+             DECODE(ix.uniqueness, 'UNIQUE', 'UNIQUE')  as ixuniq,
+             id.column_name   as cname 
+      FROM  all_indexes ix, all_ind_columns id
+      WHERE ix.owner      = USER
+      AND   ix.owner      = id.index_owner
+      AND   ix.index_name = id.index_name
+      AND   ix.table_owner= id.table_owner
+      AND   ix.table_name = id.table_name 
+      AND   ix.index_name NOT LIKE 'BIN$%==%'
+      AND   ix.index_name NOT IN ( 
+               SELECT constraint_name FROM all_constraints cs
+               WHERE cs.owner      = ix.owner
+               AND   cs.table_name = ix.table_name
+               AND   cs.constraint_type IN ('P', 'U', 'R')
+               )
+      ORDER BY 1,2,3,id.column_position
+    </select>
+    
     <create id="sch">
       CREATE DATABASE ${scname}
     </create>
@@ -835,7 +965,7 @@
          SET SESSION AUTHORIZATION ${scname}
       </create>
       <create id="pre">
-         SET SESSION AUTHORIZATION ${scname}
+         SET SESSION AUTHORIZATION ${scname};
          SET INSERTMODE ${insert_mode}
       </create>
       <create id="tb">

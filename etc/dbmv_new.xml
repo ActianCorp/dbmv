@@ -486,7 +486,7 @@ END  as "tyname",
    </mssql>
 
   <netezza>
-       <select id="DGCtbDefinition">
+       <select id="tbDefinition">
       SELECT   c.owner as "scname", c.table_name as "tbname", c.column_name as "clname", 
                (CASE 
                    WHEN c.data_type IN ('NUMERIC', 'NUMBER', 'DECIMAL') 
@@ -1010,7 +1010,7 @@ END  as "tyname",
          SET INSERTMODE ${insert_mode}
       </create>
       <create id="drop">
-         DROP TABLE IF EXISTS ${scname}.${tbname}; 
+         DROP TABLE IF EXISTS ${scname}.${tbname}
       </create>
       <create id="tb">
          CREATE TABLE ${scname}.${tbname} (
@@ -1018,7 +1018,7 @@ END  as "tyname",
 			) WITH STRUCTURE = X100, PARTITION=(HASH ON ${clname} 5 PARTITIONS)
        </create>
        <create id="viw">
-         DROP VIEW IF EXISTS ${scname}.${tbname}; 
+         DROP VIEW IF EXISTS ${scname}.${tbname}
        </create>
        <create id="seq">
          CREATE SEQUENCE ${scname}.${seqname} `

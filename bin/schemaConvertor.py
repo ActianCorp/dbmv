@@ -21,6 +21,7 @@
 #                              Substitute processing was giving an error
 #    cooda09    17-04-19       Further fixes in definitions created for 
 #                              creating of vector views
+#    cooda09    08-07-19       Further bug fixes.                       
 
 import codecs
 import sys
@@ -262,8 +263,8 @@ class ConvertorUtil:
             isnull = '' if row[6] is None else row[6]
             dfval = '' if row[7] is None else "DEFAULT " + row[7]
 
-            if dfval in typesMapping.db2vw_default:
-                dfval = typesMapping.db2vw_default[dfval]
+            if dfval in typesMapping.ms2vw_default:
+                dfval = typesMapping.ms2vw_default[dfval]
             if "NEXT VALUE FOR" in dfval:
                 dfval = ''
             # Substitute datatype by equivalent datatype
@@ -331,6 +332,7 @@ class ConvertorUtil:
                 is_new_view = True
 
             if (is_new_schema or is_new_view) and len(rls) > 0:
+
                 rls.append(s + self.params.command_separator + "\n")
 
             viwdef = row[2]
@@ -341,14 +343,14 @@ class ConvertorUtil:
             if viwdef is None : # when NULL 
                 print "viwdef is NONE"
             else :
-                for i in range(0, len(typesMapping.db2vw_view) - 1):
+                for i in range(0, len(typesMapping.ms2vw_view) - 1):
                 
-                    viwdef = viwdef.replace(typesMapping.db2vw_view[i][0], typesMapping.db2vw_view[i][1])
+                    viwdef = viwdef.replace(typesMapping.ms2vw_view[i][0], typesMapping.ms2vw_view[i][1])
 
                 viwdef = viwdef.replace(self.quote(source_schema), self.quote(target_schema))
                 viwdef = viwdef.replace('[' + source_schema + ']', self.quote(target_schema))
-            ##viwdef = viwdef.replace('WITH READ ONLY','')
-            ## viwdef = viwdef.replace('with read only','')
+                viwdef = viwdef.replace('WITH READ ONLY','')
+                viwdef = viwdef.replace('with read only','')
 
                 is_new_view = True
 
@@ -357,20 +359,21 @@ class ConvertorUtil:
                     s = s.substitute(scname=self.quote(target_schema))
                     is_new_schema = False
                     if s != "":
+
                         rls.append(s + self.params.command_separator + "\n")
                     else:
                         rls.append(["\n", ''])
 
                 if is_new_view:
                 # The create view statement
-                # s = viwdef
+                #   s = viwdef
                     s = "drop view if exists "+viewname+self.params.command_separator+"\n"+viwdef
                     is_new_view = False
 
                 s += "\n"
                 viwdef = row[4]
-
-                rls.append(s + self.params.command_separator + "\n")
+                ## rls.append(s + self.params.command_separator + "\n")
+        self.logger.debug("generate_views completed")
         return rls
 
     def generate_uk(self, source_connector, target_db_type):
@@ -390,13 +393,9 @@ class ConvertorUtil:
         uk_type = ""
         s = ""
         rls = []  # A returned list which contains the results of the function
-        self.logger.debug(self.params.source_schema)
         self.logger.debug(source_connector.dbtype)
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="ukDefinition"))
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
-        #line above was sql = sql.substitute(schema_filter=self.params.source_schema)
-        #sql = sql.safe_substitute(schema_filter='ontime')
-        #line above was sql = sql.substitute(schema_filter='ontime')
         self.logger.debug(sql)
         ddl = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="uk").strip()
 
@@ -442,8 +441,10 @@ class ConvertorUtil:
 
         s = Template(s).substitute(clname='')
 ##                                   delname=del_rule)
-        rls.append(s + self.params.command_separator + "\n")
+        if len(s) > 0:
+            rls.append(s + self.params.command_separator + "\n")
 
+        self.logger.debug("generate_uk completed")
         return rls
 
     def generate_fk(self, source_connector, target_db_type):
@@ -496,7 +497,7 @@ class ConvertorUtil:
                 # We pass to the next index definition
                 if len(s) > 0:
                     s = Template(s).substitute(clname='', rclname='')
-                    rls.append(s + self.params.command_separator + "\n")
+                    ##rls.append(s + self.params.command_separator + "\n")
 
                 # Resource owner ... 
                 # ALTER TABLE "dbo"."Order Details" ADD CONSTRAINT "FK_Order_Details_Orders"      FOREIGN KEY ( "OrderID" )
@@ -520,8 +521,10 @@ class ConvertorUtil:
                                            rclname=',' + self.quote(ref_col_name) + r'${rclname}')
 
         s = Template(s).substitute(clname='', rclname='')  # End constraint definition
-        rls.append(s + self.params.command_separator + "\n")
+        if len(s) > 0:
+            rls.append(s + self.params.command_separator + "\n")
 
+        self.logger.debug("generate_fk completed")
         return rls
 
     def generate_ix(self, source_connector, target_db_type):
@@ -567,7 +570,7 @@ class ConvertorUtil:
 
                 if len(s):  # We print last index and we pass to the next index definition
                     s = Template(s).substitute(clname='')
-                    rls.append(s + "\n")
+                    ##rls.append(s + "\n")
                     if ix_type != 'BTREE':
                         self.logger.warn("Unknown %s index type %s. Following command has been skipped\n%s " % (
                             source_connector.dbtype, str(ix_type), s))
@@ -591,6 +594,7 @@ class ConvertorUtil:
         s = Template(s).substitute(clname='')  # End index definition
         rls.append(s + "\n")
 
+        self.logger.debug("generate_ix completed")
         return rls
 
     def unload_data(self, source_connector, target_db_type):
@@ -668,14 +672,14 @@ class ConvertorUtil:
 
             colnum += 1
 
-        select += selfrom
+        select += selfrom+";"
         sqls.append((fname, colnum, select, insert))
 
         # Iterate to select, bind and insert data
         for (fname, colnum, select, insert) in sqls:
             try:
                 self.logger.debug(select)
-
+                s = ""
                 sz = 0.0
                 counter = 0
                 t1 = time.time()
@@ -1110,7 +1114,7 @@ class SchemaConvertor:
                         ixs = self.util.generate_ix(source_connector, target_connector.dbtype)
                         fks = self.util.generate_fk(source_connector, target_connector.dbtype)
                         views = self.util.generate_views(source_connector, target_connector.dbtype)
-                        self.util.write_txt_file('all', uks + ixs + fks + views)
+                        self.util.write_txt_file('all', uks+ ixs + fks + views)
                     except Exception as ex:
                         self.util.handle_error(ex)
 

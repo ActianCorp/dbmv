@@ -17,6 +17,7 @@
 #
 #    History
 #    cooda09    28-01-19        Use of --mapping flag and default option
+#    cooda09    08-07-19        Translations not working properly.      
 
 
 import multiprocessing
@@ -68,8 +69,8 @@ class ConversionParameters:
         # only select the tables for a given schema
         self.source_schema = ''
         # change the schema name to this one
-        # self.target_schema = None
-        self.target_schema = ''
+        self.target_schema = None
+        # self.target_schema = ''
         # do not migrate columns of data we cannot handle
         self.skip_unsupported = False
         # warn about columns of data we cannot handle
@@ -220,6 +221,9 @@ class ConversionParameters:
                                       .format(val))
                     sys.exit(1)
             elif opt == "--trial": self.trial = True
+            elif opt == "--translation":
+                self.translation = arg.strip()
+                self.init_translation_table_names(arg.strip())
             elif opt == "--loadmethod":
                 self.loadmethod = arg.strip().lower()
                 if self.loadmethod == 'serial':
@@ -317,7 +321,6 @@ class ConversionParameters:
                 value_key2 = t2[i*2+1].strip()
                 h2[key2] = value_key2
             self.translation_table_names[key1] = deepcopy(h2)
-
     # ex: tr
     def get_translation_name(self, p_key1, p_key2):
         """ Function which translate tuple (key1, key2) with values inserted in dictionnary _translation_table_names

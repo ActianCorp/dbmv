@@ -372,7 +372,7 @@ class ConvertorUtil:
 
                 s += "\n"
                 viwdef = row[4]
-                ## rls.append(s + self.params.command_separator + "\n")
+        rls.append(s + self.params.command_separator + "\n")
         self.logger.debug("generate_views completed")
         return rls
 

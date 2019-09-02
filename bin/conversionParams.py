@@ -146,7 +146,7 @@ class ConversionParameters:
             elif opt == "--batchsize":
                 val = arg.strip()
                 self.batchsize = int(val) if val.isdigit else -1
-                if self.batchsize < 1 or self.batchsize > 10000:
+                if self.batchsize < 10 or self.batchsize > 10000:
                     self.logger.error("'{0}' is not a valid 'batchsize' value. Valid values are [1..10000]."
                                       .format(val))
                     sys.exit(1)
@@ -343,7 +343,9 @@ class ConversionParameters:
         dest_dbtype = self.dest.split(':')[0].split('-')[0]
         if dest_dbtype == "vector": 
             self.index_separator = "_x100_"
-        if dest_dbtype == "ingres": 
+        elif dest_dbtype == "avalanche": 
+            self.index_separator = "_av_"
+        elif dest_dbtype == "ingres": 
             self.index_separator = "_ii_"
         elif dest_dbtype == "vectorh": 
             self.index_separator = "_x100_"

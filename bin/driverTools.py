@@ -82,8 +82,8 @@ defdbs = {"mysql": "mysql", "oracle": "sys", "mssql": "master",
           "teradata": "dbc", "postgres": "postgres", "greenplum": "postgres",
           "db2": "dsndd04", "ase": "master", "progress": "sysprogress",
           "maxdb": "sysinfo", "ingres": "iidbdb", "vector": "iidbdb",
-          "asa": "sys", "iq": "sys", "hana": "sys",
-          "matrix": "dev","vectorh": "iidbdb","actianx": "iidbdb","vectorc": "iidbdb"
+          "asa": "sys", "iq": "sys", "hana": "sys", "zen": "demodata",
+          "matrix": "dev","vectorh": "iidbdb","actianx": "iidbdb","avalanche": "db"
           }
 
 # Default port used when no port has been specified in connect string
@@ -91,8 +91,8 @@ defports = {"mysql": "3306", "oracle": "1521", "mssql": "1433",
             "teradata": "1025", "postgres": "5432", "greenplum": "5432",
             "db2": "446", "ase": "5000", "progress": "8104",
             "maxdb": "7200", "ingres": "II", "vector": "VW",
-            "asa": "2638", "iq": "2638", "hana": "00",
-            "matrix": "1439", "vectorh": "VH", "actianx": "II", "vectorc": "VC",
+            "asa": "2638", "iq": "2638", "hana": "00", "zen": "1531",
+            "matrix": "1439", "vectorh": "VH", "actianx": "II", "avalanche": "VW",
             }
 
 # Error table
@@ -176,9 +176,12 @@ class dbconnector:
         self.db = None
         self.cursor = None
         self.dbtype = None
+        print "IN driver tools"
+
 
         (self.dbtype, driver, hostname, port, dbname, user, pwd) = getDbStringDetails(db)
-
+        print self.dbtype
+        print driver
         if (self.dbtype in ["teradata", "maxdb"]) or (driver == "-odbc"):
             if(self.dbtype == "mssql"):
                 # Azure DB connection
@@ -251,7 +254,21 @@ class dbconnector:
                 dsn=dsn, user=user, password=pwd, autocommit=True)
             self.cursor = self.db.cursor()
 
-        elif self.dbtype in ["ingres", "vector", "vectorh", "actianx", "vectorc"]:
+        elif self.dbtype in ["zen"]:
+            # Example: driver={Pervasive ODBC Interface};server=localhost;DBQ=demodata'
+            # Example: driver={Pervasive ODBC Interface};server=hostname:port;serverdsn=dbname'
+            dsn = dbname
+            print "ZEN"
+            print dsn
+            connString = "DRIVER={Pervasive ODBC Interface};SERVER=%s;ServerDSN=%s;UID=%s;PWD=%s;" % (
+                hostname, dsn, user, pwd)
+            print dsn
+            print connString
+            if connect:
+                self.db = pyodbc.connect(connString, autocommit=True)
+                self.cursor = self.db.cursor()
+
+        elif self.dbtype in ["ingres", "vector", "vectorh", "actianx", "avalanche"]:
             connString = "DRIVER={Ingres};SERVER=@%s,tcp_ip,%s;DATABASE=%s;SERVERTYPE=INGRES;UID=%s;PWD=%s;" % (
                 hostname, port, dbname, user, pwd)
             if connect:
@@ -278,7 +295,7 @@ class dbconnector:
             encodedValue = p_sql
             self.cursor.execute(encodedValue)
 
-            if isSelect and self.dbtype in ["db2", "netezza", "teradata", "ingres", "vector", "vectorh", "vectorc", "actianx", "asa", "iq", "hana"]:
+            if isSelect and self.dbtype in ["db2", "netezza", "teradata", "ingres", "vector", "vectorh", "avalanche", "actianx", "asa", "iq", "hana"]:
                 rows = self.cursor.fetchall()
             else:
                 rows = self.cursor

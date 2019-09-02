@@ -1085,6 +1085,50 @@ END  as "tyname",
 		 DROP TABLE IF EXISTS ${scname}.dummy_${tbname}
       </load>
   </ingres>
+    <actianx>
+        <create id="sch">
+         SET SESSION AUTHORIZATION ${scname}
+      </create>
+      <create id="pre">
+         SET SESSION AUTHORIZATION ${scname}
+         SET INSERTMODE ${insert_mode}
+      </create>
+      <create id="tb">
+         CREATE TABLE ${scname}.${tbname} (
+            ${clname} ${tyname} ${isnull}   ${dfval}
+         ) WITH STRUCTURE = HEAP
+       </create>
+       <create id="drop">
+         DROP TABLE IF EXISTS ${scname}.${tbname}
+       </create>
+       <create id="viw">
+         DROP VIEW IF EXISTS ${scname}.${tbname}
+       </create>
+       <create id="seq">
+         CREATE SEQUENCE ${scname}.${seqname} `
+            ${clname} AS ${tyname} START WITH ${initv} INCREMENT BY  ${incv} MAXVALUE ${maxv} MINVALUE ${minv} ${seqtype} ${cachetype}  ${cycletype}  ${ordtype}         
+       </create>
+      <create id="uk">
+       ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname}  ${cstype} ( ${clname} )
+      </create>
+      <create id="fk">
+       
+         ALTER TABLE ${scname}.${tbname} ADD CONSTRAINT ${csname} FOREIGN KEY ( ${clname} )
+         REFERENCES ${rscname}.${rtbname} ( ${rclname} )
+      </create>
+      <create id="ix">
+       CREATE ${ixuniq} INDEX ${scname}.${ixname} ON ${scname}.${tbname} ( ${clname} )
+      </create>
+      <load id="cmd">
+         vwload --table "${scname}.${tbname}" --fdelim "${fdelim}" --quote "'" ${dbname} ${fname}
+      </load>
+      <load id="cpvwl">
+       CREATE TABLE ${scname}.dummy_${tbname} AS SELECT * FROM  ${scname}.${tbname} WHERE 1 = 0 WITH STRUCTURE = X100
+         COPY ${scname}.dummy_${tbname} VWLOAD FROM '${fname}' WITH ${attrib} ${attribsep} fdelim='${fdelim}', quote='"' , WORK_DIR='${wdname}'
+         INSERT INTO "${scname}.${tbname}" SELECT * FROM ${scname}.dummy_${tbname}
+     DROP TABLE IF EXISTS ${scname}.dummy_${tbname}
+      </load>
+  </actianx>
   <zen>
     <select id="tbDefinition">
       SELECT c.TABLE_QUALIFIER as scname, c.TABLE_NAME as tbname, c.column_name as clname, c.type_name as  tyname, 
@@ -1118,47 +1162,37 @@ END  as "tyname",
  SELECT  distinct s.table_qualifier as scname, s.table_name  as tbname, s.pk_name as csname,
             'PRIMARY KEY' as cstype,
             concat(concat(concat (
-            substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlprimarykeys ('${schema_filter}','%') c 
-                 WHERE c.key_seq = 1 and c.table_name = s.table_name),3,20), 
-            substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlprimarykeys ('${schema_filter}','%') c 
-            WHERE c.key_seq = 2 and c.table_name = s.table_name),1,20)),
-            ifnull(substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlprimarykeys ('${schema_filter}','%') c 
-            WHERE c.key_seq = 3 and c.table_name = s.table_name),1,20),'')),'"' ) as clname
+            substring((SELECT  concat( '', c.column_name) as cols  FROM  dbo.fsqlprimarykeys ('${schema_filter}','%') c 
+                 WHERE c.key_seq = 1 and c.table_name = s.table_name),1,60), 
+            substring((SELECT  concat( ',', c.column_name) as cols  FROM  dbo.fsqlprimarykeys ('${schema_filter}','%') c 
+            WHERE c.key_seq = 2 and c.table_name = s.table_name),1,60)),
+            ifnull(substring((SELECT  concat( ',', c.column_name) as cols  FROM  dbo.fsqlprimarykeys ('${schema_filter}','%') c 
+            WHERE c.key_seq = 3 and c.table_name = s.table_name),1,60),'')),'' ) as clname
            FROM dbo.fsqlprimarykeys ('${schema_filter}','%') s
            ORDER BY 1,2,3
     </select>
     <select id="ixDefinition">
 
- SELECT  distinct s.table_qualifier as scname, s.table_name  as tbname, s.table_qualifier as iscname
-            s.index_name as ixname, 
-            'INDEX' as cstype,
-            concat(concat(concat (
-            substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlStatistics ('${schema_filter}','%') c 
-                 WHERE c.seq_in_index = 1 and c.table_name = s.table_name),3,20), 
-            substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlStatistics ('${schema_filter}','%') c 
-            WHERE c.seq_in_index = 2 and c.table_name = s.table_name),1,20)),
-            ifnull(substring((SELECT  concat( '","', c.column_name) as cols  FROM  dbo.fsqlStatistics ('${schema_filter}','%') c 
-            WHERE c.seq_in_index = 3 and c.table_name = s.table_name),1,20),'')),'"' ) as clname
+ 
+
+ SELECT  distinct s.table_qualifier as scname, s.table_name  as tbname, s.table_qualifier as iscname,
+            s.index_name as ixname,
+            'BTREE' as ixtype,
+            ''  as ixuniq,
+            concat(concat(concat(
+            ifnull(substring((SELECT  max( concat( '', c.column_name)) as cols  FROM  dbo.fsqlStatistics ('${schema_filter}','%', 1) c
+                WHERE c.seq_in_index = 1 and c.table_name = s.table_name),1,60),''),
+                
+            ifnull(substring((SELECT  max( concat( ',', c.column_name)) as cols  FROM  dbo.fsqlStatistics ('${schema_filter}','%', 1) c
+                WHERE c.seq_in_index = 2 and c.table_name = s.table_name),1,60),'')),
+                
+            ifnull(substring((SELECT  max( concat(',', c.column_name)) as cols  FROM  dbo.fsqlStatistics ('${schema_filter}','%', 1) c
+                WHERE c.seq_in_index = 3 and c.table_name = s.table_name),1,60),'')),'') as cname
            FROM dbo.fsqlStatistics ('${schema_filter}','%', 1) s
            WHERE NON_UNIQUE = 1
+           AND table_name NOT LIKE '%$%'
            ORDER BY 1,2,3
 
-      SELECT  s.name as iscname, i.name as ixname, 
-             CASE  WHEN i.type      = 2 THEN 'BTREE' ELSE CAST(i.type AS VARCHAR(2))  END as ixtype, 
-             CASE  WHEN i.is_unique = 1 THEN 'UNIQUE'                                 END as ixuniq,
-                c.name as cname
-      FROM   sys.schemas s, sys.objects o1,  sys.indexes i, sysindexkeys ik, syscolumns c
-      WHERE  o1.schema_id            = s.schema_id
-      AND    o1.type                 = 'U' 
-      AND    o1.object_id            = i.object_id
-      AND    i.is_primary_key       != 1
-      AND    i.is_unique_constraint != 1 
-      AND    i.index_id              = ik.indid
-      AND    i.object_id             = ik.id
-      AND    ik.id                   = c.id
-      AND    ik.colid                = c.colid
-      AND    ('${schema_filter}' = '' OR  '${schema_filter}' = s.name)
-      ORDER BY 1,2,3, ik.keyno
     </select>
    </zen>
 </dbmv>

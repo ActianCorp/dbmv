@@ -124,7 +124,7 @@ class ConvertorUtil:
         :return: true if table.column should be processed False otherwise
         """
         result = False
-        full_col_name = "{0}.{1}".format(table, col).upper()
+        full_col_name = "Table:{0} having Column(s): {1}".format(table, col)
         table = table.upper()
         if self.params.include_tables or self.params.include_columns:
             if table in [x.upper() for x in self.params.include_tables]:
@@ -413,9 +413,13 @@ class ConvertorUtil:
             uk_name = row[2] 
             uk_type = row[3]  # Constraint type
             col_names = row[4]  # Column Names
-            del_rule = row[5]  # Deletion Rule if provided else blank
-            if del_rule is None:
-                del_rule = ""
+          
+            del_rule=""
+            #print row[5]            
+            #if row[5] is None:
+            #    del_rule = ""
+            #else:
+            #    del_rule = row[5]  # Deletion Rule if provided else blank
 
 
             if (source_schema_prev, table_name_prev, uk_name_prev) != (source_schema, table_name, uk_name):
@@ -549,6 +553,7 @@ class ConvertorUtil:
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
 
         ddl = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="ix").strip()
+        print sql
 
         cur = source_connector.execute(sql)
         for line in cur:
@@ -1052,6 +1057,9 @@ class SchemaConvertor:
         self.logger = logging.getLogger(__name__)
 
     def convert(self):
+        print self.params.src
+        print self.params.dest
+        print 'here'
         with dbconnector(self.params.src) as source_connector:
             connect = self.params.loaddl or self.params.loadata or self.params.loadtest
             with dbconnector(self.params.dest, connect) as target_connector:

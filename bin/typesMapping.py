@@ -748,6 +748,104 @@ _or2ii = {
     "BFILE"            : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"),  # OR: 4GB
 	"RAW"              : ("UUID"                        , "CAST(<COLNAME> AS VARCHAR(36))", "'<VALUE>'") # OR: p[1,38]; s[84,127]; 1,22 Bytes VW: ?
 }
+_zn2vw = {
+    "AUTOINC"          : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
+    "SMALLIDENTITY"    : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # # 2 Bytes [-32768:32767]-
+    "IDENTITY"         : ("INTEGER"                     , "<COLNAME>", "<VALUE>"  ), # Signed 4 bytes integer (-2^31; 2^31 - 1 (2,147,483,647))
+    "BIGIDENTITY"      : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # # 8 Bytes [-32768:32767]-
+    "TINYINT"          : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # ZEN: [-128 to 127] - VW(TINYINT): -128:+127
+    "SMALLINT"         : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # 2 Bytes [-32768:32767]-
+    "INTEGER"          : ("INTEGER"                     , "<COLNAME>", "<VALUE>"  ), # 
+    "BIGINT"           : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
+    "DATE"             : ("ANSIDATE"                    , "<COLNAME>", "'<VALUE>'"), # 1999-01-08
+    "DATETIME"         : ("TIMESTAMP(3)"                , "<COLNAME>", "'<VALUE>'"), # years from 1753 to 9999
+    "TIMESTAMP"        : ("TIMESTAMP(7)"                , "<COLNAME>", "'<VALUE>'"), # ZEN: [0-7] (def: 3)=> Add precision VW [max 9]
+    "TIME"             : ("TIME(6)"                     , "<COLNAME>", "'<VALUE>'"), # ZEN: [0-7] (def: 3) => Add precision VW [max 9]
+    "CURRENCY"         : ("DECIMAL(26,4)"               , "<COLNAME>", "<VALUE>"  ), # NUMERIC(26,4) ?? To check
+    "MONEY"            : ("MONEY"                       , "<COLNAME>", "<VALUE>"  ), # DECIMAL(19,2) or MONEY can be used
+    "DECIMAL"          : ("DECIMAL(<PRECISION>,<SCALE>)", "<COLNAME>", "<VALUE>"  ),
+    "NUMERIC"          : ("DECIMAL(<PRECISION>,<SCALE>)", "<COLNAME>", "<VALUE>"  ),
+    "REAL"             : ("FLOAT4"                      , "<COLNAME>", "'<VALUE>'"), # 4 bytes
+    "DOUBLE"           : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes 
+    "FLOAT"            : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes 
+    "BFLOAT4"          : ("FLOAT4"                      , "<COLNAME>", "'<VALUE>'"), # 4 bytes                     
+    "BFLOAT8"          : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes 
+    "UNIQUEIDENTIFIER" : ("UUID"                        , "<COLNAME>", "'<VALUE>'"), # 
+    "UTINYINT"         : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # ZEN: [O:255] - VW(TINYINT): -128:+127
+    "USMALLINT"        : ("INTEGER"                     , "<COLNAME>", "<VALUE>"  ), # 2 Bytes [-32768:32767]-
+    "UINTEGER"         : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
+    "UBIGINT"          : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
+    "CHAR"             : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"), # 
+    "STRING"           : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"), # BTR-STRING equivalent to CHAR
+    "ZSTRING"          : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # BTR-ZSTRING equivalent to VARCHAR
+    "VARCHAR"          : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), #
+    "WSTRING"          : ("NCHAR(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"), # BTR-WSTRING equivalent to NCHAR
+    "WZSTRING"         : ("NVARCHAR(<PRECISION>)"       , "<COLNAME>", "'<VALUE>'"), # BTR-WZSTRING equivalent to NVARCHAR
+    "STRING"           : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"), # BTR-STRING equivalent to CHAR
+    "ZSTRING"          : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # BTR-ZSTRING equivalent to VARCHAR
+    "VARCHAR"          : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), #
+    "NCHAR"            : ("NCHAR(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"), # BTR-WSTRING equivalent to NCHAR
+    "NVARCHAR"         : ("NVARCHAR(<PRECISION>)"       , "<COLNAME>", "'<VALUE>'"), # BTR-WZSTRING equivalent to NVARCHAR
+    "BIT"              : ("BOOLEAN"                     , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
+# Not Supported
+    "NUMERICSA"        : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # N/A in VW / To do something, we convert to VARCHAR - ASCII precision 15.
+    "NUMERICSTS"       : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # N/A in VW / To do something, we convert to VARCHAR - NUMERIC SIGNED ASCII precision 14
+    "NUMERICSLB"       : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # N/A in VW / To do something, we convert to VARCHAR - NUMERIC SIGNED ASCII precision 14
+    "NUMERICSLB"       : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # N/A in VW / To do something, we convert to VARCHAR - NUMERIC SIGNED ASCII precision 14
+    "NUMERICSTB"       : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # N/A in VW / To do something, we convert to VARCHAR - NUMERIC SIGNED ASCII precision 14
+    "BINARY"           : ("TINYINT"                     , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
+    "LONGVARBINARY"    : ("VARBINARY(<PRECISION>)"      , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
+    "LONGVARCHAR"      : ("VARCHAR(8000)"              , "CAST(<COLNAME> AS VARCHAR(8000))", "'<VALUE>'")
+}
+_zn2ii = {
+    "AUTOINC"          : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
+    "SMALLIDENTITY"    : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # # 2 Bytes [-32768:32767]-
+    "IDENTITY"         : ("INTEGER"                     , "<COLNAME>", "<VALUE>"  ), # Signed 4 bytes integer (-2^31; 2^31 - 1 (2,147,483,647))
+    "BIGIDENTITY"      : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # # 8 Bytes [-32768:32767]-
+    "TINYINT"          : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # ZEN: [-128 to 127] - VW(TINYINT): -128:+127
+    "SMALLINT"         : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # 2 Bytes [-32768:32767]-
+    "INTEGER"          : ("INTEGER"                     , "<COLNAME>", "<VALUE>"  ), # 
+    "BIGINT"           : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
+    "DATE"             : ("ANSIDATE"                    , "<COLNAME>", "'<VALUE>'"), # 1999-01-08
+    "DATETIME"         : ("TIMESTAMP(3)"                , "<COLNAME>", "'<VALUE>'"), # years from 1753 to 9999
+    "TIMESTAMP"        : ("TIMESTAMP(7)"                , "<COLNAME>", "'<VALUE>'"), # ZEN: [0-7] (def: 3)=> Add precision VW [max 9]
+    "TIME"             : ("TIME(6)"                     , "<COLNAME>", "'<VALUE>'"), # ZEN: [0-7] (def: 3) => Add precision VW [max 9]
+    "CURRENCY"         : ("DECIMAL(26,4)"               , "<COLNAME>", "<VALUE>"  ), # NUMERIC(26,4) ?? To check
+    "MONEY"            : ("MONEY"                       , "<COLNAME>", "<VALUE>"  ), # DECIMAL(19,2) or MONEY can be used
+    "DECIMAL"          : ("DECIMAL(<PRECISION>,<SCALE>)", "<COLNAME>", "<VALUE>"  ),
+    "NUMERIC"          : ("DECIMAL(<PRECISION>,<SCALE>)", "<COLNAME>", "<VALUE>"  ),
+    "REAL"             : ("FLOAT4"                      , "<COLNAME>", "'<VALUE>'"), # 4 bytes
+    "DOUBLE"           : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes 
+    "FLOAT"            : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes 
+    "BFLOAT4"          : ("FLOAT4"                      , "<COLNAME>", "'<VALUE>'"), # 4 bytes                     
+    "BFLOAT8"          : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes 
+    "UNIQUEIDENTIFIER" : ("UUID"                        , "<COLNAME>", "'<VALUE>'"), # 
+    "UTINYINT"         : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # ZEN: [O:255] - VW(TINYINT): -128:+127
+    "USMALLINT"        : ("INTEGER"                     , "<COLNAME>", "<VALUE>"  ), # 2 Bytes [-32768:32767]-
+    "UINTEGER"         : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
+    "UBIGINT"          : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
+    "CHAR"             : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"), # 
+    "STRING"           : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"), # BTR-STRING equivalent to CHAR
+    "ZSTRING"          : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # BTR-ZSTRING equivalent to VARCHAR
+    "VARCHAR"          : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), #
+    "WSTRING"          : ("NCHAR(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"), # BTR-WSTRING equivalent to NCHAR
+    "WZSTRING"         : ("NVARCHAR(<PRECISION>)"       , "<COLNAME>", "'<VALUE>'"), # BTR-WZSTRING equivalent to NVARCHAR
+    "STRING"           : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"), # BTR-STRING equivalent to CHAR
+    "ZSTRING"          : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # BTR-ZSTRING equivalent to VARCHAR
+    "VARCHAR"          : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), #
+    "NCHAR"            : ("NCHAR(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"), # BTR-WSTRING equivalent to NCHAR
+    "NVARCHAR"         : ("NVARCHAR(<PRECISION>)"       , "<COLNAME>", "'<VALUE>'"), # BTR-WZSTRING equivalent to NVARCHAR
+    "BIT"              : ("BOOLEAN"                     , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
+# Not Supported
+    "NUMERICSA"        : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # N/A in VW / To do something, we convert to VARCHAR - ASCII precision 15.
+    "NUMERICSTS"       : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # N/A in VW / To do something, we convert to VARCHAR - NUMERIC SIGNED ASCII precision 14
+    "NUMERICSLB"       : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # N/A in VW / To do something, we convert to VARCHAR - NUMERIC SIGNED ASCII precision 14
+    "NUMERICSLB"       : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # N/A in VW / To do something, we convert to VARCHAR - NUMERIC SIGNED ASCII precision 14
+    "NUMERICSTB"       : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # N/A in VW / To do something, we convert to VARCHAR - NUMERIC SIGNED ASCII precision 14
+    "BINARY"           : ("VARBYTE"                     , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
+    "LONGVARBINARY"    : ("LONG VARBYTE(<PRECISION>)"   , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
+    "LONGVARCHAR"      : ("LONG VARCHAR"                , "<COLNAME>", "'<VALUE>'")
+}
 
 ''' 
     Translation table for equivalent datatype
@@ -770,21 +868,30 @@ db_column_mapping  = { "mssql"      : {"mysql"     : _ms2my,
                                         "hana"      : _ms2ha
                                         },
                         "db2"       : {"db2"       : _d22d2,
-                                        "vector"    : _d22vw,
+                                        "vector"   : _d22vw,
+                                        "vectorh"  : _d22vw,
+                                        "avalanche" : _d22vw
                                         },
                         "oracle"    : {"vector"    : _or2vw,
                                         "ingres"   : _or2ii,
                                         "actianx"  : _or2ii,
-                                        "vectorc"  : _or2vw,
+                                        "avalanche" : _or2vw,
                                         "vectorh"  : _or2vw
                                         },
                         "mysql"     : {"vector"    : _my2vw
+                                        },
+                        "zen"       : {"vector"    : _zn2vw,
+                                       "ingres"    : _zn2ii,
+                                       "actianx"   : _zn2ii
                                         },
                         "iq"        : {"vector"    : _iq2vw
                                         },
                         "postgres"  : {"vector"    : _pg2vw
                                         },
-                        "teradata"  : {"vector"    : _td2vw
+                        "teradata"  : {"vector"    : _td2vw,
+                                        "avalanche" : _or2vw,
+                                        "vectorh"  : _or2vw
+                                        
                                         }
                         }
 
@@ -793,11 +900,20 @@ _unsupported_types_mapping = {
         "vector": ['image', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml']
     },
     "teradata" : {
-        "vector": [ 'XML', 'JSON', 'CLOB' ,'BLOB' ,'INTEGER_UDT TYPE' , 'UDT TYPE' , 'byte', 'BYTE', 'byte varying', 'BYTE VARYING', 'VARBYTE', 'VARBINARY', 'PERIOD(TIME WITH TIME ZONE)', 'PERIOD(TIME)', 'PERIOD(DATE)', 'INTERVAL DAY', 'INTERVAL YEAR', 'INTERVAL DAY TO HOUR',  'INTERVAL DAY TO MINUTE', 'INTERVAL HOUR', 'INTERVAL MONTH', 'INTERVAL MINUTE TO SECOND', 'INTERVAL HOUR TO MINUTE', 'INTERVAL SECOND', 'INTERVAL MINUTE', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml']
+        "vector": [ 'XML', 'JSON', 'CLOB' ,'BLOB' ,'INTEGER_UDT TYPE' , 'UDT TYPE' , 'byte', 'BYTE', 'byte varying', 'BYTE VARYING', 'VARBYTE', 'VARBINARY', 'PERIOD(TIME WITH TIME ZONE)', 'PERIOD(TIME)', 'PERIOD(DATE)', 'INTERVAL DAY', 'INTERVAL YEAR', 'INTERVAL DAY TO HOUR',  'INTERVAL DAY TO MINUTE', 'INTERVAL HOUR', 'INTERVAL MONTH', 'INTERVAL MINUTE TO SECOND', 'INTERVAL HOUR TO MINUTE', 'INTERVAL SECOND', 'INTERVAL MINUTE', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml'],
+        "avalanche": [ 'XML', 'JSON', 'CLOB' ,'BLOB' ,'INTEGER_UDT TYPE' , 'UDT TYPE' , 'byte', 'BYTE', 'byte varying', 'BYTE VARYING', 'VARBYTE', 'VARBINARY', 'PERIOD(TIME WITH TIME ZONE)', 'PERIOD(TIME)', 'PERIOD(DATE)', 'INTERVAL DAY', 'INTERVAL YEAR', 'INTERVAL DAY TO HOUR',  'INTERVAL DAY TO MINUTE', 'INTERVAL HOUR', 'INTERVAL MONTH', 'INTERVAL MINUTE TO SECOND', 'INTERVAL HOUR TO MINUTE', 'INTERVAL SECOND', 'INTERVAL MINUTE', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml'],
+        "vectorh": [ 'XML', 'JSON', 'CLOB' ,'BLOB' ,'INTEGER_UDT TYPE' , 'UDT TYPE' , 'byte', 'BYTE', 'byte varying', 'BYTE VARYING', 'VARBYTE', 'VARBINARY', 'PERIOD(TIME WITH TIME ZONE)', 'PERIOD(TIME)', 'PERIOD(DATE)', 'INTERVAL DAY', 'INTERVAL YEAR', 'INTERVAL DAY TO HOUR',  'INTERVAL DAY TO MINUTE', 'INTERVAL HOUR', 'INTERVAL MONTH', 'INTERVAL MINUTE TO SECOND', 'INTERVAL HOUR TO MINUTE', 'INTERVAL SECOND', 'INTERVAL MINUTE', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml']
     },
+    "zen" : {
+        "vector": ['RAW', 'CLOB', 'BLOB', 'BYTE', 'VARBYTE', 'BINARY' ],
+        "ingres": ['RAW', 'CLOB' ],
+        "actianx": ['RAW', 'CLOB']
+        },
     "oracle" : {
         "vector": ['RAW', 'CLOB', 'BLOB', 'BYTE', 'VARBYTE', 'BINARY' ],
-        "vectorc": ['raw', 'image', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml'],
+        "avalanche": ['raw', 'image', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml'],
+        "actianx": ['raw', 'hierarchyid', 'geometry', 'geography', 'xml'],
+        "ingres": ['raw',  'hierarchyid', 'geometry', 'geography', 'xml'],
         "vectorh": ['raw', 'image', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml']
     }
 }
@@ -807,6 +923,8 @@ _source_schema_filters = {
 }
 
 def get_types_mapping(source_db_type, target_db_type):
+    print source_db_type
+    print target_db_type
     return (db_column_mapping[source_db_type][target_db_type])
 
 def get_unsupported_types(source_db_type, target_db_type):

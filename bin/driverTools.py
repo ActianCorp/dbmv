@@ -83,7 +83,8 @@ defdbs = {"mysql": "mysql", "oracle": "sys", "mssql": "master",
           "db2": "dsndd04", "ase": "master", "progress": "sysprogress",
           "maxdb": "sysinfo", "ingres": "iidbdb", "vector": "iidbdb",
           "asa": "sys", "iq": "sys", "hana": "sys", "zen": "demodata",
-          "matrix": "dev","vectorh": "iidbdb","actianx": "iidbdb","avalanche": "db"
+          "matrix": "dev","vectorh": "iidbdb","actianx": "iidbdb","avalanche": "db",
+          "netezza": "nz"
           }
 
 # Default port used when no port has been specified in connect string
@@ -93,6 +94,7 @@ defports = {"mysql": "3306", "oracle": "1521", "mssql": "1433",
             "maxdb": "7200", "ingres": "II", "vector": "VW",
             "asa": "2638", "iq": "2638", "hana": "00", "zen": "1531",
             "matrix": "1439", "vectorh": "VH", "actianx": "II", "avalanche": "VW",
+            "netezza": 5480
             }
 
 # Error table
@@ -176,12 +178,9 @@ class dbconnector:
         self.db = None
         self.cursor = None
         self.dbtype = None
-        print "IN driver tools"
 
 
         (self.dbtype, driver, hostname, port, dbname, user, pwd) = getDbStringDetails(db)
-        print self.dbtype
-        print driver
         if (self.dbtype in ["teradata", "maxdb"]) or (driver == "-odbc"):
             if(self.dbtype == "mssql"):
                 # Azure DB connection
@@ -258,12 +257,8 @@ class dbconnector:
             # Example: driver={Pervasive ODBC Interface};server=localhost;DBQ=demodata'
             # Example: driver={Pervasive ODBC Interface};server=hostname:port;serverdsn=dbname'
             dsn = dbname
-            print "ZEN"
-            print dsn
             connString = "DRIVER={Pervasive ODBC Interface};SERVER=%s;ServerDSN=%s;UID=%s;PWD=%s;" % (
                 hostname, dsn, user, pwd)
-            print dsn
-            print connString
             if connect:
                 self.db = pyodbc.connect(connString, autocommit=True)
                 self.cursor = self.db.cursor()

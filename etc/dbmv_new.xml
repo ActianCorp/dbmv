@@ -926,7 +926,7 @@ END  as "tyname",
          SET SESSION AUTHORIZATION ${scname}
       </create>
       <create id="pre">
-         SET SESSION AUTHORIZATION ${scname}
+         SET SESSION AUTHORIZATION ${scname};
          SET INSERTMODE ${insert_mode}
       </create>
       <create id="tb">
@@ -1006,7 +1006,7 @@ END  as "tyname",
          SET SESSION AUTHORIZATION ${scname}
       </create>
       <create id="pre">
-         SET SESSION AUTHORIZATION ${scname}
+         SET SESSION AUTHORIZATION ${scname};
          SET INSERTMODE ${insert_mode}
       </create>
       <create id="drop">
@@ -1015,7 +1015,7 @@ END  as "tyname",
       <create id="tb">
          CREATE TABLE ${scname}.${tbname} (
             ${clname}	${tyname}	${isnull} 	${dfval} 
-			) WITH STRUCTURE = X100, PARTITION=(HASH ON ${clname} 5 PARTITIONS)
+			) WITH STRUCTURE = X100, PARTITION=(HASH ON ${clname} ${partcount} PARTITIONS)
        </create>
        <create id="viw">
          DROP VIEW IF EXISTS ${scname}.${tbname}
@@ -1046,13 +1046,13 @@ END  as "tyname",
          SET SESSION AUTHORIZATION ${scname}
       </create>
       <create id="pre">
-         SET SESSION AUTHORIZATION ${scname}
+         SET SESSION AUTHORIZATION ${scname};
          SET INSERTMODE ${insert_mode}
       </create>
       <create id="tb">
          CREATE TABLE ${scname}.${tbname} (
             ${clname}	${tyname}	${isnull} 	${dfval}
-         ) WITH STRUCTURE = HEAP
+         ) WITH STRUCTURE = ${structure}
        </create>
        <create id="drop">
          DROP TABLE IF EXISTS ${scname}.${tbname}
@@ -1079,10 +1079,10 @@ END  as "tyname",
          vwload --table "${scname}.${tbname}" --fdelim "${fdelim}" --quote "'" ${dbname} ${fname}
       </load>
       <load id="cpvwl">
-	     CREATE TABLE ${scname}.dummy_${tbname} AS SELECT * FROM  ${scname}.${tbname} WHERE 1 = 0 WITH STRUCTURE = X100
-         COPY ${scname}.dummy_${tbname} VWLOAD FROM '${fname}' WITH ${attrib} ${attribsep} fdelim='${fdelim}', quote='"' , WORK_DIR='${wdname}'
-         INSERT INTO "${scname}.${tbname}" SELECT * FROM ${scname}.dummy_${tbname}
-		 DROP TABLE IF EXISTS ${scname}.dummy_${tbname}
+	     CREATE TABLE ${scname}.dummy_${tbname} AS SELECT * FROM  ${scname}.${tbname} WHERE 1 = 0 WITH STRUCTURE = X100;
+         COPY ${scname}.dummy_${tbname} VWLOAD FROM '${fname}' WITH ${attrib} ${attribsep} fdelim='${fdelim}', quote='"' , WORK_DIR='${wdname}';
+         INSERT INTO "${scname}.${tbname}" SELECT * FROM ${scname}.dummy_${tbname};
+		     DROP TABLE IF EXISTS ${scname}.dummy_${tbname}
       </load>
   </ingres>
     <actianx>
@@ -1090,13 +1090,13 @@ END  as "tyname",
          SET SESSION AUTHORIZATION ${scname}
       </create>
       <create id="pre">
-         SET SESSION AUTHORIZATION ${scname}
+         SET SESSION AUTHORIZATION ${scname};
          SET INSERTMODE ${insert_mode}
       </create>
       <create id="tb">
          CREATE TABLE ${scname}.${tbname} (
             ${clname} ${tyname} ${isnull}   ${dfval}
-         ) WITH STRUCTURE = HEAP
+         ) WITH STRUCTURE = ${structure}
        </create>
        <create id="drop">
          DROP TABLE IF EXISTS ${scname}.${tbname}
@@ -1123,10 +1123,10 @@ END  as "tyname",
          vwload --table "${scname}.${tbname}" --fdelim "${fdelim}" --quote "'" ${dbname} ${fname}
       </load>
       <load id="cpvwl">
-       CREATE TABLE ${scname}.dummy_${tbname} AS SELECT * FROM  ${scname}.${tbname} WHERE 1 = 0 WITH STRUCTURE = X100
-         COPY ${scname}.dummy_${tbname} VWLOAD FROM '${fname}' WITH ${attrib} ${attribsep} fdelim='${fdelim}', quote='"' , WORK_DIR='${wdname}'
-         INSERT INTO "${scname}.${tbname}" SELECT * FROM ${scname}.dummy_${tbname}
-     DROP TABLE IF EXISTS ${scname}.dummy_${tbname}
+       CREATE TABLE ${scname}.dummy_${tbname} AS SELECT * FROM  ${scname}.${tbname} WHERE 1 = 0 WITH STRUCTURE = X100;
+         COPY ${scname}.dummy_${tbname} VWLOAD FROM '${fname}' WITH ${attrib} ${attribsep} fdelim='${fdelim}', quote='"' , WORK_DIR='${wdname}';
+         INSERT INTO "${scname}.${tbname}" SELECT * FROM ${scname}.dummy_${tbname};
+         DROP TABLE IF EXISTS ${scname}.dummy_${tbname}
       </load>
   </actianx>
   <zen>

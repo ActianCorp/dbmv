@@ -250,7 +250,7 @@ class ConvertorUtil:
                         rls.append(s + self.params.command_separator + "\n")
                 # The create table statement
                 s = Template(ddl[1])
-                s = s.substitute(scname=self.quote(target_schema), tbname=self.quote(table_name))
+                s = s.substitute(scname=self.quote(target_schema), tbname=self.quote(table_name), structure=self.quote(self.params.structure))
                 is_new_table = False
             else:
                 s += ','
@@ -279,9 +279,10 @@ class ConvertorUtil:
 	    if scalestring.endswith('.0'):
 	        scalestring = scalestring[:-2]
             s = s.replace('<SCALE>', str(scalestring))
-			
             if held_structure == "":
-                held_structure = Template(ddl[3]).substitute(clname=self.quote(clname))
+                held_structure = Template(ddl[3]).substitute(clname=self.quote(clname), 
+                    structure=self.quote(self.params.structure),
+                    partcount=self.quote(self.params.partcount))
 
         if held_structure != "":
             #held_structure = Template(ddl[3]).substitute(clname=self.quote(clname))
@@ -314,10 +315,16 @@ class ConvertorUtil:
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="viwDefinition"))
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
         s = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="viw").strip()
+        print 'DEBUG QUERY SQL START'
+        print sql
+        print 'DEBUG QUERY SQL END'
 
         # START View
         cur = source_connector.execute(sql)
         for line in cur:
+            print 'DEBUG VIEWS SQL START'
+            print line
+            print 'DEBUG VIEWS SQL END'
             row = self.strip_row(line)
 
             # An attempt to get one schema only loaded
@@ -1059,7 +1066,6 @@ class SchemaConvertor:
     def convert(self):
         print self.params.src
         print self.params.dest
-        print 'here'
         with dbconnector(self.params.src) as source_connector:
             connect = self.params.loaddl or self.params.loadata or self.params.loadtest
             with dbconnector(self.params.dest, connect) as target_connector:

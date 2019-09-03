@@ -63,6 +63,8 @@ class ConversionParameters:
         self.truncate = False
         self.translation = None
         self.mapping = False
+        self.partcount = 5
+        self.structure = 'HEAP'
 
         # Run the script through ignoring all errors
         self.continue_on_error = False
@@ -247,6 +249,23 @@ class ConversionParameters:
                     sys.exit(1)
             elif opt == "--xx": self.xx = arg.strip()
             elif opt == "--mapping" :self.mapping = True
+            elif opt == "--partition":
+                val = int(arg.strip())
+                if (val > 1) and (val < 720):
+                    self.partcount = val
+                else:
+                    self.logger.error("'{0}' is not a valid '--partitions' value. Valid values are "
+                                      "between 2 and 720.".format(val)) 
+                    sys.exit(1)
+            elif opt == "--structure":
+                if arg.strip().lower() == 'heap':
+                   self.structure = arg.strip().lower()
+                elif arg.strip().lower() == 'x100':
+                   self.structure = arg.strip().lower()
+                else:
+                    self.logger.error("'{0}' is not a valid '--structure' value. Valid values are "
+                                      "[heap,x100].".format(arg.strip().lower()))
+                    sys.exit(1)
             elif opt == "--parfile":
                 fname = arg
                 if fname != "":
@@ -272,6 +291,10 @@ class ConversionParameters:
                                 self.owntgt = value
                             elif param == "--ownsrc":
                                 self.ownsrc = value
+                            elif param == "--structure":
+                                self.structure = value
+                            elif param == "--partition":
+                                self.partcount = value
             else:
                 assert False, "unhandled option"
 
@@ -343,11 +366,18 @@ class ConversionParameters:
         dest_dbtype = self.dest.split(':')[0].split('-')[0]
         if dest_dbtype == "vector": 
             self.index_separator = "_x100_"
+            self.partcount = 0
+            self.structure = 'X100'
         elif dest_dbtype == "avalanche": 
             self.index_separator = "_av_"
+            self.partcount = 'DEFAULT'
+            self.structure = 'X100'
         elif dest_dbtype == "ingres": 
             self.index_separator = "_ii_"
+            self.partcount = 0
+            self.structure = 'HEAP'
         elif dest_dbtype == "vectorh": 
             self.index_separator = "_x100_"
+            self.structure = 'X100'
         else:
             self.index_separator = "_ax11_"

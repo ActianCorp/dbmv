@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*
 
-# Copyright 2018 Actian Corporation
+# Copyright 2018 - 2019 Actian Corporation
 
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -74,12 +74,13 @@ def main():
               'truncate', 'parfile=', 'fdelim=', 'unload', 'translation=', 'quote=', 'cmdsep=', 'charmax=',
               'creindex', 'ownsrc=', 'owntgt=', 'add_drop',
               'on_error=', 'source_schema=', 'target_schema=', 'unsupported=', 'exclude=',
-              'include=', 'tables=', 'insertmode=', 'trial', 'loadmethod=', 'threads=', 'mapping', '--help']
+              'include=', 'tables=', 'insertmode=', 'trial', 'loadmethod=', 'threads=', 'mapping', '--help',
+              'partition=', 'structure=']
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--src', required=False, action="store",
+    parser.add_argument('--src', required=True, action="store",
                         help="source DB used as a data source for migration, copy, etc.")
-    parser.add_argument('--dest', required=False, action="store",
+    parser.add_argument('--dest', required=True, action="store",
                         help="destination DB used as a destination for migration, copy, etc.")
     parser.add_argument('--loadata', required=False, action="store_true",
                         help="indicates whether to load or not the actual tables data from @source to @dest")
@@ -149,6 +150,12 @@ def main():
     parser.add_argument('--mapping', required=False, action="store_true",
                         help="Display SRC to DEST variable assignment mapping")
 
+    parser.add_argument('--partition', required=False, action="store",
+                        help="For Partitioned table storage use this partition count. Note avalanche always uses 'DEFAULT'")
+
+    parser.add_argument('--structure', required=False, action="store",
+                        help="Target Storage structure of tables - HEAP or X100")
+
     if not sys.argv[1:]:
         # Print usage and exit
         parser.print_help()
@@ -164,6 +171,11 @@ def main():
         for s in g_pars:
             print s
         sys.exit(2)
+##
+##
+    print 'Version 0.9a' 
+    print '# Copyright 2018 - 2019 Actian Corporation'
+##
 
     params = ConversionParameters()
     params.parse_arguments(opts)

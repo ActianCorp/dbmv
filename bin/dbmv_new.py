@@ -14,9 +14,18 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-#    
-#    History
-#    cooda09	28-01-19	Modifications for --mapping option
+##
+##    History
+##    cooda09	28-01-19	Modifications for --mapping option
+##    bolke01/  03-09-19    Update to manage structure/partition counts
+##    cooda09               Added Netezza Source
+##                          Added MySQL Source
+##                          Added Zen Source
+##    bolke01  05-09-19     Added --pagesize option for HEAP tables
+##                          (ingres and actianx only dest)
+##                          Added parameters vwload and cpvwl for improved
+##                          data load performance.
+##
 
 import getopt
 import os
@@ -75,7 +84,7 @@ def main():
               'creindex', 'ownsrc=', 'owntgt=', 'add_drop',
               'on_error=', 'source_schema=', 'target_schema=', 'unsupported=', 'exclude=',
               'include=', 'tables=', 'insertmode=', 'trial', 'loadmethod=', 'threads=', 'mapping', '--help',
-              'partition=', 'structure=']
+              'partition=', 'structure=', 'pagesize=', 'cpvwl', 'vwload']
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--src', required=True, action="store",
@@ -156,6 +165,14 @@ def main():
     parser.add_argument('--structure', required=False, action="store",
                         help="Target Storage structure of tables - HEAP or X100")
 
+    parser.add_argument('--pagesize', required=False, action="store",
+                        help="Target Storage size of HEAP tables (8192,16384,32768,65536) Def=8192 or installation default")
+
+    parser.add_argument('--vwload', required=False, action="store_true",
+                        help="Use vwload at command line to load CSV files using --cmdsep - vwload -t tab [<opts>] dbname file_list" )
+
+    parser.add_argument('--cpvwl', required=False, action="store_true",
+                        help="Use vwload at SQL level to load CSV files using --cmdsep - COPY tab() VWLOAD FROM 'csvlist <with opts>'")
     if not sys.argv[1:]:
         # Print usage and exit
         parser.print_help()

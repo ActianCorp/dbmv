@@ -15,10 +15,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-#    History
-#    cooda09    28-01-19        Use of --mapping flag and default option
-#    cooda09    08-07-19        Translations not working properly.      
-
+##    History
+##    cooda09    28-01-19        Use of --mapping flag and default option
+##    cooda09    08-07-19        Translations not working properly.
+##    bolke01    05-09-19        Started the addition of parameter suport for
+##                               vwload (--vwload) and copy vwload (--cpvwl)
 
 import multiprocessing
 import re
@@ -65,6 +66,13 @@ class ConversionParameters:
         self.mapping = False
         self.partcount = 5
         self.structure = 'HEAP'
+        # HEAP use only
+        self.pagesize = 8192
+        # load methods other than insert ( i.e BULK)
+        # Heap only
+        self.load_cpvwl = False
+        # X100 only
+        self.load_vwload = False
 
         # Run the script through ignoring all errors
         self.continue_on_error = False
@@ -149,7 +157,7 @@ class ConversionParameters:
                 val = arg.strip()
                 self.batchsize = int(val) if val.isdigit else -1
                 if self.batchsize < 10 or self.batchsize > 10000:
-                    self.logger.error("'{0}' is not a valid 'batchsize' value. Valid values are [1..10000]."
+                    self.logger.error("'{0}' is not a valid 'batchsize' value. Valid values are [10..10000]."
                                       .format(val))
                     sys.exit(1)
             elif opt == "--charmax":
@@ -255,17 +263,28 @@ class ConversionParameters:
                     self.partcount = val
                 else:
                     self.logger.error("'{0}' is not a valid '--partitions' value. Valid values are "
-                                      "between 2 and 720.".format(val)) 
+                                      "between 2 and 720.".format(val))
                     sys.exit(1)
             elif opt == "--structure":
-                if arg.strip().lower() == 'heap':
-                   self.structure = arg.strip().lower()
-                elif arg.strip().lower() == 'x100':
-                   self.structure = arg.strip().lower()
+                val = arg.strip().lower()
+                if val == 'heap':
+                   self.structure = val
+                elif val == 'x100':
+                   self.structure = val
                 else:
                     self.logger.error("'{0}' is not a valid '--structure' value. Valid values are "
-                                      "[heap,x100].".format(arg.strip().lower()))
+                                      "[heap,x100].".format(val))
                     sys.exit(1)
+            elif opt == "--pagesize":
+                val = int(arg.strip())
+                if val in (8192, 16384, 32768, 65366):
+                   self.pagesize = val
+                else:
+                    self.logger.error("'{0}' is not a valid '--pagesize' value. Valid values are "
+                                      "[8192, 16384, 32768, 65366].".format(val))
+                    sys.exit(1)
+            elif opt == "--cpvwl":self.load_cpvwl = True
+            elif opt == "--vwload":self.load_vwload = True
             elif opt == "--parfile":
                 fname = arg
                 if fname != "":
@@ -295,6 +314,8 @@ class ConversionParameters:
                                 self.structure = value
                             elif param == "--partition":
                                 self.partcount = value
+                            elif param == "--pagesize":
+                                self.pagesize = value
             else:
                 assert False, "unhandled option"
 
@@ -364,20 +385,29 @@ class ConversionParameters:
 
     def set_index_separator(self):
         dest_dbtype = self.dest.split(':')[0].split('-')[0]
-        if dest_dbtype == "vector": 
+        if dest_dbtype == "vector":
             self.index_separator = "_x100_"
             self.partcount = 0
             self.structure = 'X100'
-        elif dest_dbtype == "avalanche": 
+            self.pagesize=''
+        elif dest_dbtype == "avalanche":
             self.index_separator = "_av_"
             self.partcount = 'DEFAULT'
             self.structure = 'X100'
-        elif dest_dbtype == "ingres": 
+            self.pagesize=''
+        elif dest_dbtype == "ingres":
             self.index_separator = "_ii_"
             self.partcount = 0
-            self.structure = 'HEAP'
-        elif dest_dbtype == "vectorh": 
+            if self.pagesize != 8192:
+                self.structure = 'HEAP, PAGE_SIZE = ' + format(self.pagesize)
+            else:
+                self.structure = 'HEAP'
+        elif dest_dbtype == "vectorh":
             self.index_separator = "_x100_"
             self.structure = 'X100'
+            self.pagesize=''
         else:
             self.index_separator = "_ax11_"
+            if self.structure.lower() == 'heap':
+                if self.pagesize != 8192:
+                    self.structure = 'HEAP, PAGE_SIZE = ' + format(self.pagesize)

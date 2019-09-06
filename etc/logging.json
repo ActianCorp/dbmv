@@ -15,7 +15,7 @@
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "level": "DEBUG",
+            "level": "WARN",
             "formatter": "simple",
             "stream": "ext://sys.stdout",
             "filters": ["errorfilter"]

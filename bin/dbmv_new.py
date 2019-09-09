@@ -25,6 +25,9 @@
 ##                          (ingres and actianx only dest)
 ##                          Added parameters vwload and cpvwl for improved
 ##                          data load performance.
+##    bolke01  08-09-19     reverted True to False for required setting of 
+##                          src and dest parameters. they are required either
+##                          in a prameter file or on the command line.
 ##
 
 import getopt
@@ -87,9 +90,9 @@ def main():
               'partition=', 'structure=', 'pagesize=', 'cpvwl', 'vwload']
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--src', required=True, action="store",
+    parser.add_argument('--src', required=False, action="store",
                         help="source DB used as a data source for migration, copy, etc.")
-    parser.add_argument('--dest', required=True, action="store",
+    parser.add_argument('--dest', required=False, action="store",
                         help="destination DB used as a destination for migration, copy, etc.")
     parser.add_argument('--loadata', required=False, action="store_true",
                         help="indicates whether to load or not the actual tables data from @source to @dest")

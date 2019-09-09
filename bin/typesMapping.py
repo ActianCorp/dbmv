@@ -20,6 +20,8 @@
 #    bolke01    03-01-19        Added Netezza, Postgres, Zen to the capabilities
 #                               and included actianx, ingres along with vector for several cases
 #                               Imitial unsupported datatyoes presented ( WIP)  
+##   bolke01    08-09-19        Added INTERVAL into Oracle mappings - hard code (2) 
+##                              which needs to be made more general. TODO
 
 
 ## Remaining Pg datatypes:
@@ -856,6 +858,7 @@ _or2vw = {
     "FLOAT"            : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # OR: p[1,38]; s[84,127]; 1,22 Bytes VW: ?
     "BINARY_DOUBLE"    : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # OR:8 bytes float
     "BINARY_FLOAT"     : ("FLOAT4"                      , "<COLNAME>", "'<VALUE>'"), # OR:4 bytes float      
+    "INTERVAL YEAR(2) TO MONTH"       : ("INTERVAL YEAR TO MONTH"  , "<COLNAME>", "'<VALUE>'"), # OR: [0-9] (def: 6) => Add precision VW [max 6]
     "TIMESTAMP%"       : ("TIMESTAMP(<SCALE>)"          , "<COLNAME>", "'<VALUE>'"), # OR: [0-9] (def: 6) => Add precision VW [max 6]
     "TIMESTAMP% WITH TIME ZONE"      : ("TIMESTAMP(<SCALE>)", "<COLNAME>", "'<VALUE>'"), # Not implemented yet
     "TIMESTAMP% WITH LOCAL TIME ZONE": ("TIMESTAMP(<SCALE>)", "<COLNAME>", "'<VALUE>'"), # Not implemented yet
@@ -890,6 +893,7 @@ _or2ii = {
     "FLOAT"            : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # OR: p[1,38]; s[84,127]; 1,22 Bytes VW: ?
     "BINARY_DOUBLE"    : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # OR:8 bytes float
     "BINARY_FLOAT"     : ("FLOAT4"                      , "<COLNAME>", "'<VALUE>'"), # OR:4 bytes float      
+    "INTERVAL YEAR(2) TO MONTH"       : ("INTERVAL YEAR TO MONTH"  , "<COLNAME>", "'<VALUE>'"), # OR: [0-9] (def: 6) => Add precision VW [max 6]
     "TIMESTAMP%"       : ("TIMESTAMP(<SCALE>)"          , "<COLNAME>", "'<VALUE>'"), # OR: [0-9] (def: 6) => Add precision VW [max 6]
     "TIMESTAMP% WITH TIME ZONE"      : ("TIMESTAMP(<SCALE>)", "<COLNAME>", "'<VALUE>'"), # Not implemented yet
     "TIMESTAMP% WITH LOCAL TIME ZONE": ("TIMESTAMP(<SCALE>)", "<COLNAME>", "'<VALUE>'"), # Not implemented yet

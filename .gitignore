@@ -3,3 +3,5 @@
 dbmv*.txt
 bin/*.pyc
 venv/*
+wrk/or_vw2.par
+dbmv_exec.log

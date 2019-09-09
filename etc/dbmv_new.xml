@@ -145,7 +145,7 @@ END  as "tyname",
       ORDER BY 1,2,3
     </select>
     <select id="fkDefinition">
-      SELECT cl1.owner  as scname, cl1.table_name  as tbname, cl1.constraint_name as csname, cl1.column_name as clname, 
+      SELECT cl1.owner  as scname, cl1.table_name  as tbname, cl1.constraint_name as csname, replace(cl1.column_name,'$','_dlr_')  as clname, 
              cl2.owner as rscname, cl2.table_name as rtbname, cl2.column_name as rclname,
              cast((CASE delete_rule WHEN 'SET NULL' THEN 'ON DELETE SET NULL' 
                                      WHEN 'NO ACTION' THEN '' 
@@ -167,7 +167,7 @@ END  as "tyname",
              cast((CASE  cs.constraint_type WHEN 'P'  THEN 'PRIMARY KEY'
               ELSE                                    'UNIQUE'
               END) as varchar2(20)) as cstype,
-              cast(cl.column_name as varchar2(40)) as clname,
+              cast(replace(cl.column_name,'$','_dlr_') as varchar2(140)) as clname,
               cast((CASE delete_rule WHEN 'SET NULL' THEN 'ON DELETE SET NULL' 
                                      WHEN 'NO ACTION' THEN '' 
                                      WHEN 'CASCADE' THEN 'ON DELETE CASCADE ' 
@@ -185,7 +185,7 @@ END  as "tyname",
       SELECT ix.table_owner as scname, ix.table_name as tbname, ix.owner as iscname, ix.index_name as ixname, 
              CASE  WHEN ix.index_type IN ('NORMAL', 'BITMAP') THEN 'BTREE' ELSE CAST(ix.index_type AS VARCHAR(2))  END as ixtype, 
              DECODE(ix.uniqueness, 'UNIQUE', 'UNIQUE')  as ixuniq,
-             id.column_name   as cname 
+             replace(id.column_name,'$','_dlr_') as cname 
       FROM  all_indexes ix, all_ind_columns id
       WHERE ix.owner      = USER
       AND   ix.owner      = id.index_owner

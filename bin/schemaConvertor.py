@@ -22,6 +22,8 @@
 #    cooda09    17-04-19       Further fixes in definitions created for 
 #                              creating of vector views
 #    cooda09    08-07-19       Further bug fixes.                       
+##   bolke01    08-09-19       wrap result in format and use a space to replace 
+##                             clname instead of empty string.                       
 
 import codecs
 import sys
@@ -103,7 +105,7 @@ class ConvertorUtil:
         """
         result = param
         if self.params.quote is not None:
-            result = self.params.quote + result + self.params.quote
+            result = self.params.quote + format(result) + self.params.quote
         return result
 
     def write_txt_file(self, file_suffix, data):
@@ -436,7 +438,7 @@ class ConvertorUtil:
 
                 if len(s):
                     # We pass to the next index definition
-                    s = Template(s).substitute(clname='')
+                    s = Template(s).substitute(clname=' ')
                     rls.append(s + self.params.command_separator + "\n")
 
                 target_schema = self.params.get_target_schema(source_schema)

@@ -15,15 +15,21 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-#    History
-#    cooda09    28-01-19       Use of --mapping flag and change to precision processing
-#    cooda09    11-02-19       Schema owner of 'ontime' was hardcoded.
-#                              Substitute processing was giving an error
-#    cooda09    17-04-19       Further fixes in definitions created for 
-#                              creating of vector views
-#    cooda09    08-07-19       Further bug fixes.                       
-##   bolke01    08-09-19       wrap result in format and use a space to replace 
-##                             clname instead of empty string.                       
+##    History
+##    cooda09    28-01-19       Use of --mapping flag and change to precision processing
+##    cooda09    11-02-19       Schema owner of 'ontime' was hardcoded.
+##                              Substitute processing was giving an error
+##    cooda09    17-04-19       Further fixes in definitions created for
+##                              creating of vector views
+##    cooda09    08-07-19       Further bug fixes.
+##    bolke01    05-09-19       Added starter function for using vwload and cpvwl to load
+##                              data from files
+##                              Added import subprocess to enable use of OS commands.
+##                              List out the files available to load before loading them
+##                              using vwload or cpvwl ( not yet implemented)
+##                              Changed print to logger messages to clean up consolen/schemaConvertor.py.
+##   bolke01    08-09-19       wrap result in format and use a space to replace
+##                             clname instead of empty string.
 
 import codecs
 import sys
@@ -37,6 +43,7 @@ from xml.dom.minidom import Node
 from concurrent.futures import ThreadPoolExecutor, wait
 from multiprocessing import RawValue
 from threading import Lock
+import subprocess
 import typesMapping
 from driverTools import dbconnector
 
@@ -210,7 +217,7 @@ class ConvertorUtil:
                     2] + "' is not supported. Skipping...")
                 continue
             if row[4] > self.params.charmax:
-                print self.params.charmax 
+                self.logger.info(self.params.charmax) 
                 self.logger.warn(row[1] + '.' + row[2] + ' of type ' + row[3] +
                                  ' : ' + str(
                     row[4]) + ' is not acceptable (should be <= ' + str(
@@ -317,16 +324,12 @@ class ConvertorUtil:
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="viwDefinition"))
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
         s = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="viw").strip()
-        print 'DEBUG QUERY SQL START'
-        print sql
-        print 'DEBUG QUERY SQL END'
+        self.logger.debug( sql )
 
         # START View
         cur = source_connector.execute(sql)
         for line in cur:
-            print 'DEBUG VIEWS SQL START'
-            print line
-            print 'DEBUG VIEWS SQL END'
+            self.logger.debug( line )
             row = self.strip_row(line)
 
             # An attempt to get one schema only loaded
@@ -350,7 +353,7 @@ class ConvertorUtil:
             # viwdef = regex.sub(r'CAST(\g<value> AS \g<type>)', viwdef)
 
             if viwdef is None : # when NULL 
-                print "viwdef is NONE"
+                self.logger.warn( "viwdef is NONE" )
             else :
                 for i in range(0, len(typesMapping.ms2vw_view) - 1):
                 
@@ -562,7 +565,7 @@ class ConvertorUtil:
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
 
         ddl = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="ix").strip()
-        print sql
+        self.logger.debug(sql)
 
         cur = source_connector.execute(sql)
         for line in cur:
@@ -894,6 +897,123 @@ class ConvertorUtil:
         else:
             self.logger.warn("No tables loaded. Total Elapsed time: %f" % (time.time() - start_time))
 
+
+    def load_data_vwload(self, source_connector, target_connector):
+        """
+            Extract data from src db and load data to dest db
+            @:param source_connector
+            @:param target_connector
+        """
+        source_schema = ""
+        source_schema_prev = ""
+        table_name = ""
+        table_name_prev = ""
+        count_loaded = 0
+        insert = ""
+        select = ""
+        sqls = []
+        s = ""
+        colnum = 0
+        table_name = ""
+        selfrom = ""
+        types_mapping = typesMapping.get_types_mapping(source_connector.dbtype, target_connector.dbtype)
+        types_to_skip = typesMapping.get_unsupported_types_csv(source_connector.dbtype, target_connector.dbtype)
+
+        sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="tbDefinition").strip())
+        sql = sql.substitute(types_to_skip=types_to_skip, schema_filter=self.params.source_schema)
+
+        cursrc = source_connector.execute(sql)
+        # Iterate to prepare statements select, insert
+        for line in cursrc:
+            row = self.strip_row(line)
+
+            # skip not included cols and tables
+            if not self.is_included(row[1], row[2]):
+                continue
+
+            source_schema = row[0]
+            table_name = row[1]
+
+            if (source_schema_prev, table_name_prev) != (source_schema, table_name):
+                source_schema_prev = source_schema
+                table_name_prev = table_name
+                target_schema = self.params.get_target_schema(source_schema)
+
+                if len(s) > 0:
+                    insert += ")"
+                    select += selfrom
+                    sqls.append((colnum, select, insert,
+                                 self.quote(table_name.strip()) if target_schema is None else self.quote(
+                                     target_schema.strip()) + '.' + self.quote(table_name.strip())))
+
+                s = self.quote(table_name.strip()) if source_schema is None else self.quote(source_schema.strip()) + '.' + self.quote(
+                    table_name.strip())
+                select = 'SELECT '
+                selfrom = ' FROM ' + s
+
+                s = self.quote(table_name.strip()) if target_schema is None else self.quote(target_schema.strip()) + '.' + self.quote(
+                    table_name.strip())
+                table_name = s
+                insert = 'COPY ' + s + '() VWLOAD  '
+                attribs = 'WITH ATTRIBUTES='''
+                colnum = 0
+
+            if colnum > 0:
+                insert += ","
+                select += ","
+
+            clname = row[2]
+            tyname = row[3]
+
+            (_, select_cast, insert_cast) = types_mapping[
+                tyname.upper()]  # Translate datatypes according to translation table
+
+            select += select_cast
+            select = select.replace('<COLNAME>', '"' + clname.strip() + '"')
+            insert += insert_cast
+            insert = insert.replace('<VALUE>', '<V' + str(colnum) + '>')
+
+            colnum += 1
+
+        insert += ")"
+        select += selfrom
+        sqls.append((colnum, select, insert, table_name))
+
+        # Run precondition script if found (e.g. this can be used to setup session authorization)
+        target_schema = self.params.get_target_schema(source_schema)
+        pres = self.get_xml_data(dbtype=target_connector.dbtype, sql="create", identifier="pre")
+        pre = Template(pres).substitute(scname=self.quote(target_schema), insert_mode=self.params.insert_mode)
+        for pre_line in pre.split(';'):
+            # do not alter DB in trial mode
+            if not self.params.trial:
+                target_connector.execute(pre_line)
+
+        self.connectors = [[source_connector, target_connector, False, 0]]
+        for index in range(1, self.params.threads):
+            source_db = dbconnector(self.params.src, True)
+            target_db = dbconnector(self.params.dest, True)
+            self.connectors.append([source_db, target_db, False, index])
+
+        self.logger.info('Started loading data from tables. Thread count: ' + str(self.params.threads))
+        start_time = time.time()
+        futures = []
+        pool = ThreadPoolExecutor(self.params.threads)
+        for (colnum, select, insert, table_name) in sqls:
+            if table_name == "":
+                self.logger.warn("No table_name specified")
+            else:
+                count_loaded += 1
+                futures.append(pool.submit(self.copy_table_data, table_name, colnum, select, insert))
+        wait(futures)
+        for i in range(1, self.params.threads):
+            self.connectors[i][0].close()
+            self.connectors[i][1].close()
+        if count_loaded > 0:
+            self.logger.info("Data load attempted for (%d) tables. Please verifiy what was loaded. Total Elapsed time: %f" %
+                             (count_loaded, time.time() - start_time))
+        else:
+            self.logger.warn("No tables loaded. Total Elapsed time: %f" % (time.time() - start_time))
+
     def insert_sql(self, db, sql):
         """
             call db sql script with exception wrap
@@ -950,7 +1070,7 @@ class ConvertorUtil:
             if self.params.truncate and table_name != '':
                 # do not alter DB in trial mode
                 if not self.params.trial:
-                    print "Running in Trial Mode for %s" % table_name
+                    self.logger.info( "Running in Trial Mode for " + table_name )
                     target_connector.execute('MODIFY %s TO TRUNCATED' % table_name)
 
             insert_time = 0
@@ -1066,8 +1186,6 @@ class SchemaConvertor:
         self.logger = logging.getLogger(__name__)
 
     def convert(self):
-        print self.params.src
-        print self.params.dest
         with dbconnector(self.params.src) as source_connector:
             connect = self.params.loaddl or self.params.loadata or self.params.loadtest
             with dbconnector(self.params.dest, connect) as target_connector:
@@ -1165,3 +1283,27 @@ class SchemaConvertor:
                                 target_connector.execute(s)
                         except Exception as ex:
                             self.util.handle_error(ex)
+
+#subprocess.check_output(['ls','-l']) #all that is technically needed...
+                print 'INFO : DDL ouput files generated:'
+                print subprocess.check_output(['ls','-l', '*.txt'])
+                print 'INFO : log file generated:'
+                print subprocess.check_output(['ls','-l', '*.log'])
+
+                if self.params.load_vwload:
+                    try:
+
+#subprocess.check_output(['ls','-l']) #all that is technically needed...
+                        print 'INFO : unloaded files:'
+                        print subprocess.check_output(['ls','-l', self.params.source_schema + '*'])
+#                        self.util.load_data_vwload(source_connector, target_connector)
+                    except Exception as ex:
+                        self.util.handle_error(ex)
+
+                if self.params.load_cpvwl:
+                    try:
+#subprocess.check_output(['ls','-l']) #all that is technically needed...
+                        print subprocess.check_output(['ls','-l', self.params.source_schema + '*'])
+#                        self.util.load_data_vwload(source_connector, target_connector)
+                    except Exception as ex:
+                        self.util.handle_error(ex)

@@ -140,7 +140,7 @@ END  as "tyname",
       SELECT DISTINCT s.table_schema scname, s.table_name viwname, s.view_definition viwdef, s.check_option viwchk , s.is_updatable viwupd
       FROM (SELECT ora_database_name AS TABLE_CATALOG, 	sys_context( 'userenv', 'current_schema' ) AS TABLE_SCHEMA, view_name AS TABLE_NAME,
       CONCAT(CONCAT(CONCAT('CREATE VIEW ', view_name), ' AS '),TEXT_VC) AS VIEW_DEFINITION,
-	  CAST (CASE WHEN text_vc like '%WITH%CHECK%OPTION%' then  '/*CHECK_OPTIONi=YES*/' 
+	  CAST (CASE WHEN text_vc like '%WITH%CHECK%OPTION%' then  '/*CHECK_OPTION=YES*/'
 		ELSE '/*CHECK_OPTION=NONE*/' END as varchar2(40)) AS CHECK_OPTION, 'IS_UPDATABLE=NO ' AS IS_UPDATABLE FROM user_views ) s
       ORDER BY 1,2,3
     </select>

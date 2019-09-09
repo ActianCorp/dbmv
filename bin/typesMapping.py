@@ -800,8 +800,8 @@ _td2vw = {
     "BYTEINT"          : ("TINYINT"                     , "<COLNAME>", "<VALUE>"  ), # SQL: [O:255] - VW(TINYINT): -128:+127
     "SMALLINT"         : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # 2 Bytes [-32768:32767]-
     "BIGINT"           : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
-    "FLOAT"            : ("FLOAT(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"), # MS(def) = float(53) precision(4 or 8)
-    "REAL"             : ("FLOAT(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"), # MS(def) = FLOAT(24)
+    "FLOAT"            : ("FLOAT"          , "<COLNAME>", "'<VALUE>'"), # MS(def) = float(53) precision(4 or 8)
+    "REAL"             : ("REAL"          , "<COLNAME>", "'<VALUE>'"), # MS(def) = FLOAT(24)
     "TIMESTAMP"        : ("TIMESTAMP"                   , "<COLNAME>", "'<VALUE>'"),
     "TIMESTAMP WITH TIME ZONE"   : ("TIMESTAMP WITH TIME ZONE"  , "<COLNAME>", "'<VALUE>'"),
     "TIME WITH TIME ZONE"   : ("TIME WITH TIME ZONE"  , "<COLNAME>", "'<VALUE>'"),
@@ -823,7 +823,8 @@ _td2vw = {
     "CHAR"             : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"),
     "CHARACTER"        : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"),
     "VARCHAR"          : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"),
-    "UNIQUEIDENTIFIER" : ("VARCHAR(64)"                 , "<COLNAME>", "'<VALUE>'"),
+    "UNIQUEIDENTIFIER" : ("UUID"                 , "<COLNAME>", "'<VALUE>'"),
+#UNSUPPORTED
     "BINARY"           : ("BINARY(<PRECISION>)"         , "<COLNAME>", "<VALUE>"  ), # MS: [1:8000] (Fixed size)
     "BYTE"             : ("BYTE(<PRECISION>)"           , "<COLNAME>", "<VALUE>"  ), # MS: [1:8000] (Fixed size)
     "VARBINARY"        : ("VARBINARY(<PRECISION>)"      , "<COLNAME>", "<VALUE>"  ), # MS: [1:8000] (Var size)
@@ -870,6 +871,7 @@ _or2vw = {
     "NVARCHAR"         : ("NVARCHAR(<PRECISION>)"       , "<COLNAME>", "'<VALUE>'"), 
     "NVARCHAR2"        : ("NVARCHAR(<PRECISION>)"       , "<COLNAME>", "'<VALUE>'"), 
     "NCHAR"            : ("NCHAR(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"),
+    "SDO_KEYWORDARRAY" : ("XXXX(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"),
     "RAW"             : ("UUID"                        , "CAST(<COLNAME> AS VARCHAR(36))", "'<VALUE>'") # OR: p[1,38]; s[84,127]; 1,22 Bytes VW: ?
 }
 
@@ -917,6 +919,7 @@ _or2ii = {
     "BLOB"             : ("NVARCHAR(<PRECISION>)"       , "CAST(<COLNAME> AS VARCHAR(max))", "'<VALUE>'"),  # OR: 4GB-1*db_block_size
     "GUID"             : ("UUID"                        , "<COLNAME>", "<VALUE>"  ), # OR: p[1,38]; s[84,127]; 1,22 Bytes VW: ?
     "BFILE"            : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"),  # OR: 4GB
+    "SDO_KEYWORDARRAY" : ("XXXX(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"),
 	"RAW"              : ("UUID"                        , "CAST(<COLNAME> AS VARCHAR(36))", "'<VALUE>'") # OR: p[1,38]; s[84,127]; 1,22 Bytes VW: ?
 }
 _zn2vw = {
@@ -1125,22 +1128,19 @@ _unsupported_types_mapping = {
         "actianx": ['RAW', 'CLOB']
     },
     "oracle" : {
-        "vector": ['RAW', 'CLOB', 'BLOB', 'BYTE', 'VARBYTE', 'BINARY' ],
-        "avalanche": ['raw', 'image', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml'],
-        "actianx": ['raw', 'hierarchyid', 'geometry', 'geography', 'xml'],
-        "ingres": ['raw',  'hierarchyid', 'geometry', 'geography', 'xml'],
-        "vectorh": ['raw', 'image', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml']
+        "vector": ['RAW', 'CLOB', 'BLOB', 'BYTE', 'VARBYTE', 'BINARY', 'SDO_KEYWORDARRAY'  ],
+        "avalanche": ['raw', 'image', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml', 'SDO_KEYWORDARRAY'],
+        "actianx": ['raw', 'hierarchyid', 'geometry', 'geography', 'xml', 'SDO_KEYWORDARRAY'],
+        "ingres": ['raw',  'hierarchyid', 'geometry', 'geography', 'xml', 'SDO_KEYWORDARRAY'],
+        "vectorh": ['raw', 'image', 'hierarchyid', 'geometry', 'geography', 'varbinary', 'binary', 'xml', 'SDO_KEYWORDARRAY']
     }
 }
-
 
 _source_schema_filters = {
     "mssql" : "${source_schema_name}"
 }
 
 def get_types_mapping(source_db_type, target_db_type):
-    print source_db_type
-    print target_db_type
     return (db_column_mapping[source_db_type][target_db_type])
 
 def get_unsupported_types(source_db_type, target_db_type):

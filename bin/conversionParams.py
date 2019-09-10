@@ -20,6 +20,7 @@
 ##    cooda09    08-07-19        Translations not working properly.
 ##    bolke01    05-09-19        Started the addition of parameter suport for
 ##                               vwload (--vwload) and copy vwload (--cpvwl)
+##    bolke01    10-09-19        Add quiet option
 
 import multiprocessing
 import re
@@ -66,6 +67,7 @@ class ConversionParameters:
         self.mapping = False
         self.partcount = 5
         self.structure = 'HEAP'
+        self.quiet = True
         # HEAP use only
         self.pagesize = 8192
         # load methods other than insert ( i.e BULK)
@@ -257,6 +259,7 @@ class ConversionParameters:
                     sys.exit(1)
             elif opt == "--xx": self.xx = arg.strip()
             elif opt == "--mapping" :self.mapping = True
+            elif opt == "--quiet" :self.quiet = True
             elif opt == "--partition":
                 val = int(arg.strip())
                 if (val > 1) and (val < 720):

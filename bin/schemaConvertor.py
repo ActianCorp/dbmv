@@ -1285,27 +1285,30 @@ class SchemaConvertor:
                         except Exception as ex:
                             self.util.handle_error(ex)
 
+                if not self.params.quiet :
 #subprocess.check_output(['ls','-l']) #all that is technically needed...
-                print 'INFO : DDL ouput files generated:'
-                print subprocess.check_output(['ls','-l', '*.txt'])
-                print 'INFO : log file generated:'
-                print subprocess.check_output(['ls','-l', '*.log'])
+                    print 'INFO : DDL ouput files generated:'
+                    print subprocess.check_output(['ls','-l', '*.txt'])
+                    print 'INFO : log file generated:'
+                    print subprocess.check_output(['ls','-l', '*.log'])
 
                 if self.params.load_vwload:
                     try:
 
+                        if not self.params.quiet :
 #subprocess.check_output(['ls','-l']) #all that is technically needed...
-                        print 'INFO : unloaded files:'
-                        print subprocess.check_output(['ls','-l', self.params.source_schema + '*'])
-#                        self.util.load_data_vwload(source_connector, target_connector)
+                            print 'INFO : unloaded files:'
+                            print subprocess.check_output(['ls','-l', self.params.source_schema + '*'])
+#                            self.util.load_data_vwload(source_connector, target_connector)
                     except Exception as ex:
                         self.util.handle_error(ex)
 
                 if self.params.load_cpvwl:
                     try:
+                        if not self.params.quiet :
 #subprocess.check_output(['ls','-l']) #all that is technically needed...
-                        print subprocess.check_output(['ls','-l', self.params.source_schema + '*'])
-                        print  self.params.source_schema + '*'
+                           print subprocess.check_output(['ls','-l', self.params.source_schema + '*'])
+                           print  self.params.source_schema + '*'
 #                        self.util.load_data_vwload(source_connector, target_connector)
                     except Exception as ex:
                         self.util.handle_error(ex)

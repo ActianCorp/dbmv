@@ -28,6 +28,7 @@
 ##    bolke01  08-09-19     reverted True to False for required setting of 
 ##                          src and dest parameters. they are required either
 ##                          in a prameter file or on the command line.
+##    bolke01  10-09-19     Added quiet option (default)
 ##
 
 import getopt
@@ -87,7 +88,7 @@ def main():
               'creindex', 'ownsrc=', 'owntgt=', 'add_drop',
               'on_error=', 'source_schema=', 'target_schema=', 'unsupported=', 'exclude=',
               'include=', 'tables=', 'insertmode=', 'trial', 'loadmethod=', 'threads=', 'mapping', '--help',
-              'partition=', 'structure=', 'pagesize=', 'cpvwl', 'vwload']
+              'partition=', 'structure=', 'pagesize=', 'cpvwl', 'vwload' , 'quiet']
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--src', required=False, action="store",
@@ -176,6 +177,9 @@ def main():
 
     parser.add_argument('--cpvwl', required=False, action="store_true",
                         help="Use vwload at SQL level to load CSV files using --cmdsep - COPY tab() VWLOAD FROM 'csvlist <with opts>'")
+    parser.add_argument('--quiet', required=False, action="store_true",
+                        help="No output to console")
+
     if not sys.argv[1:]:
         # Print usage and exit
         parser.print_help()
@@ -193,7 +197,7 @@ def main():
         sys.exit(2)
 ##
 ##
-    print 'Version 0.9a' 
+    print 'Version 0.9d' 
     print '# Copyright 2018 - 2019 Actian Corporation'
 ##
 

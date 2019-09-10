@@ -129,12 +129,13 @@ class ConvertorUtil:
     def is_included(self, table, col):
         """
         :param table: table to check
-        :param col: column tot check
+        :param col: column to check
         :return: true if table.column should be processed False otherwise
         """
         result = False
-        full_col_name = "Table:{0} having Column(s): {1}".format(table, col)
         table = table.upper()
+        col = col.upper()
+        full_col_name = "{0}.{1}".format(table, col)
         if self.params.include_tables or self.params.include_columns:
             if table in [x.upper() for x in self.params.include_tables]:
                 if full_col_name in [x.upper() for x in self.params.exclude_columns]:
@@ -259,7 +260,7 @@ class ConvertorUtil:
                         rls.append(s + self.params.command_separator + "\n")
                 # The create table statement
                 s = Template(ddl[1])
-                s = s.substitute(scname=self.quote(target_schema), tbname=self.quote(table_name), structure=self.quote(self.params.structure))
+                s = s.substitute(scname=self.quote(target_schema), tbname=self.quote(table_name), structure=self.params.structure)
                 is_new_table = False
             else:
                 s += ','
@@ -290,7 +291,7 @@ class ConvertorUtil:
             s = s.replace('<SCALE>', str(scalestring))
             if held_structure == "":
                 held_structure = Template(ddl[3]).substitute(clname=self.quote(clname), 
-                    structure=self.quote(self.params.structure),
+                    structure=self.params.structure,
                     partcount=self.quote(self.params.partcount))
 
         if held_structure != "":
@@ -1304,6 +1305,7 @@ class SchemaConvertor:
                     try:
 #subprocess.check_output(['ls','-l']) #all that is technically needed...
                         print subprocess.check_output(['ls','-l', self.params.source_schema + '*'])
+                        print  self.params.source_schema + '*'
 #                        self.util.load_data_vwload(source_connector, target_connector)
                     except Exception as ex:
                         self.util.handle_error(ex)

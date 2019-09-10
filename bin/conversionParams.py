@@ -192,7 +192,7 @@ class ConversionParameters:
                     self.logger.error("--target_schema value can't be empty")
                     sys.exit(1)
                 self.target_schema = val
-            elif opt == "--unsupported": self.skip_unsupported = arg.strip() == 'skip'
+            elif opt == "--unsupported": self.skip_unsupported = False
             elif opt == "--exclude":
                 val = arg.strip()
                 if not val:

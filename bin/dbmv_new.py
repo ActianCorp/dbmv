@@ -142,7 +142,7 @@ def main():
     parser.add_argument('--target_schema', required=False, action="store",
                         help="convert @source_schema to this schema")
     parser.add_argument('--unsupported', required=False, action="store_true",
-                        help="whether to skip unsupported types or no")
+                        help="whether to skip unsupported types or not")
     parser.add_argument('--exclude', required=False, action="store",
                         help="exclude specific table/columns from processing")
     parser.add_argument('--include', required=False, action="store",

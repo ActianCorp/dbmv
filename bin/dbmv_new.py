@@ -29,6 +29,7 @@
 ##                          src and dest parameters. they are required either
 ##                          in a prameter file or on the command line.
 ##    bolke01  10-09-19     Added quiet option (default)
+##    bolke01  10-09-19     Added verbose option (default)
 ##
 
 import getopt
@@ -88,7 +89,7 @@ def main():
               'creindex', 'ownsrc=', 'owntgt=', 'add_drop',
               'on_error=', 'source_schema=', 'target_schema=', 'unsupported=', 'exclude=',
               'include=', 'tables=', 'insertmode=', 'trial', 'loadmethod=', 'threads=', 'mapping', '--help',
-              'partition=', 'structure=', 'pagesize=', 'cpvwl', 'vwload' , 'quiet']
+              'partition=', 'structure=', 'pagesize=', 'cpvwl', 'vwload' , 'quiet', 'verbose']
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--src', required=False, action="store",
@@ -179,6 +180,8 @@ def main():
                         help="Use vwload at SQL level to load CSV files using --cmdsep - COPY tab() VWLOAD FROM 'csvlist <with opts>'")
     parser.add_argument('--quiet', required=False, action="store_true",
                         help="No output to console")
+    parser.add_argument('--verbose', required=False, action="store_true",
+                        help="Output to console - may cause embedded usage to show errors or warnings.")
 
     if not sys.argv[1:]:
         # Print usage and exit
@@ -197,7 +200,7 @@ def main():
         sys.exit(2)
 ##
 ##
-    print 'Version 0.9d' 
+    print 'Version 0.9e'
     print '# Copyright 2018 - 2019 Actian Corporation'
 ##
 

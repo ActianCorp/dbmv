@@ -30,6 +30,9 @@
 ##                              Changed print to logger messages to clean up consolen/schemaConvertor.py.
 ##   bolke01    08-09-19       wrap result in format and use a space to replace
 ##                             clname instead of empty string.
+##   bolke01    13-09-19       Updated the processing of MSSQL primary keys to correct 
+##                             order of columns
+
 
 import codecs
 import sys
@@ -409,7 +412,7 @@ class ConvertorUtil:
         self.logger.debug(source_connector.dbtype)
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="ukDefinition"))
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
-        self.logger.debug(sql)
+        #self.logger.debug(sql)
         ddl = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="uk").strip()
 
         cur = source_connector.execute(sql)
@@ -481,7 +484,6 @@ class ConvertorUtil:
 
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="fkDefinition"))
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
-
         ddl = self.get_xml_data(dbtype=target_db_type, sql="create", identifier="fk").strip()
 
         cur = source_connector.execute(sql)

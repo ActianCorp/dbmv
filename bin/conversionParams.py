@@ -21,6 +21,7 @@
 ##    bolke01    05-09-19        Started the addition of parameter suport for
 ##                               vwload (--vwload) and copy vwload (--cpvwl)
 ##    bolke01    10-09-19        Add quiet option
+##    bolke01  10-09-19          Added verbose option 
 
 import multiprocessing
 import re
@@ -260,6 +261,7 @@ class ConversionParameters:
             elif opt == "--xx": self.xx = arg.strip()
             elif opt == "--mapping" :self.mapping = True
             elif opt == "--quiet" :self.quiet = True
+            elif opt == "--verbose" :self.quiet = False
             elif opt == "--partition":
                 val = int(arg.strip())
                 if (val > 1) and (val < 720):

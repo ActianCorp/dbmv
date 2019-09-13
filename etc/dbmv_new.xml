@@ -433,37 +433,31 @@ END  as "tyname",
       AND    f.rkeyid     = o3.object_id
       AND    o3.schema_id = s2.schema_id
       AND    ('${schema_filter}' = '' OR ('${schema_filter}' = s1.name AND '${schema_filter}' = s2.name))
-      ORDER BY 1,2,3,f.keyno
+      ORDER BY s1.name, o1.name, o2.name, f.keyno
     </select>
     <select id="ukDefinition">
-      select distinct * FROM (SELECT  s.name as scname, o1.name as tbname, o2.name as csname, 
-             CASE  o2.xtype WHEN 'PK'  THEN 'PRIMARY KEY'
-                            WHEN 'UQ'  THEN 'UNIQUE'
-             END as cstype,
-              substring(STUFF(( SELECT distinct  '","'+ c.name  FROM  sysobjects o2, sysindexes i, sysindexkeys ik, syscolumns c
-      WHERE  o1.schema_id = s.schema_id
-      AND    o1.object_id = o2.parent_obj
-      AND    o1.object_id = i.id
-      AND    o2.name      = i.name
-      AND    i.id         = ik.id
-      AND    i.indid      = ik.indid
-      AND    ik.id        = c.id
-      AND    ik.colid     = c.colid
-      AND    o2.xtype  IN ('PK','UQ')
-      ORDER BY 1 FOR XML PATH('')),1 ,1, ''),3,128) as clname
-      FROM   sys.schemas s, sys.objects o1, sysobjects o2, sysindexes i, sysindexkeys ik, syscolumns c
-      WHERE  o1.schema_id = s.schema_id
-      AND    o1.object_id = o2.parent_obj
-      AND    o1.object_id = i.id
-      AND    o2.name      = i.name
-      AND    i.id         = ik.id
-      AND    i.indid      = ik.indid
-      AND    ik.id        = c.id
-      AND    ik.colid     = c.colid
-      AND    o2.xtype  IN ('PK','UQ')
-      AND    ('${schema_filter}' = '' OR  '${schema_filter}' = s.name)
-      ) tmp
-	  ORDER BY 1,2,3
+      SELECT  DISTINCT Schema_name(tab.schema_id)               AS scname,
+              tab.NAME                                          AS tbname,
+              pk.NAME                                           AS csname,
+              CASE WHEN is_primary_key = 1 THEN 'PRIMARY KEY' ELSE 'UNIQUE' END as cstype,  
+              REPLACE(Substring(column_names, 1, Len(column_names) - 1),', ','","') AS columns
+      FROM   sys.tables tab
+       INNER JOIN sys.indexes pk
+               ON tab.object_id = pk.object_id
+                  AND pk.is_unique = 1  
+       CROSS apply (SELECT col.name + ', '
+                    FROM   sys.index_columns ic
+                           INNER JOIN sys.columns col
+                                   ON ic.object_id = col.object_id
+                                      AND ic.column_id = col.column_id
+                    WHERE  ic.object_id = tab.object_id
+                           AND ic.index_id = pk.index_id
+                    ORDER  BY col.column_id
+                    FOR xml path ('')) D (column_names)
+       WHERE ('${schema_filter}' = '' OR  '${schema_filter}' = Schema_name(tab.schema_id))
+         AND pk.NAME IS NOT NULL
+       ORDER  BY Schema_name(tab.schema_id),
+          pk.name 
     </select>
     <select id="ixDefinition">
       SELECT s.name as scname, o1.name as tbname, s.name as iscname, i.name as ixname, 

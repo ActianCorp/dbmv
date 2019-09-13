@@ -22,6 +22,8 @@
 #                               Imitial unsupported datatyoes presented ( WIP)  
 ##   bolke01    08-09-19        Added INTERVAL into Oracle mappings - hard code (2) 
 ##                              which needs to be made more general. TODO
+##   bolke01    08-09-19        Added DATE for ms2ii - inline with ANSI SQL
+##                              DATE maps to ANSIDATE - it potentially shoudl be TIMESTAMP(0) 
 
 
 ## Remaining Pg datatypes:
@@ -430,8 +432,10 @@ _ms2ii = {
     "MONEY"            : ("NUMERIC(19,4)"               , "<COLNAME>", "<VALUE>"  ), # MSSQL : NUMERIC(19,4) 8 bytes
     "SMALLMONEY"       : ("NUMERIC(10,4)"               , "<COLNAME>", "<VALUE>"  ), # MSSQL : NUMERIC(10,4) 4 bytes
     "TIMESTAMP"        : ("BIGINT"                      , "<COLNAME>", "'<VALUE>'"), # MS = ROWVERSION
-    "DATETIME"         : ("TIMESTAMP"                   , "CONVERT(VARCHAR,<COLNAME>,121)", "'<VALUE>'"),   # SQL: 1999-01-08 04:05:06; ii: sweden
-    "SMALLDATETIME"    : ("TIMESTAMP"                   , "CONVERT(VARCHAR,<COLNAME>,120)", "'<VALUE>'"),   # depricate the INGRESDATE 
+    "DATETIME"         : ("TIMESTAMP"                   , "CONVERT(VARCHAR,<COLNAME>,121)", "'<VALUE>'"), # MS: 1999-01-08 04:05:06.xxxx 
+    "SMALLDATETIME"    : ("TIMESTAMP(0)"                , "CONVERT(VARCHAR,<COLNAME>,120)", "'<VALUE>'"), # MS: 1999-01-08 04:05:00
+    "TIME"             : ("TIME"                        , "CONVERT(VARCHAR,<COLNAME>,120)", "'<VALUE>'"), # MS: 1999-01-08 04:05:00
+    "DATE"             : ("ANSIDATE"                    , "CONVERT(VARCHAR,<COLNAME>,120)", "'<VALUE>'"), # MS: 1999-01-08
     "NCHAR"            : ("NCHAR(<PRECISION>)"          , "CAST(<COLNAME> AS TEXT)", "'<VALUE>'"),
     "CHAR"             : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"),
     "NVARCHAR"         : ("NVARCHAR(<PRECISION>)"       , "CAST(<COLNAME> AS TEXT)", "'<VALUE>'"),          # Should be NTEXT but pb driver MSSQL

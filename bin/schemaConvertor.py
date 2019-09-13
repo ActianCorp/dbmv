@@ -295,7 +295,7 @@ class ConvertorUtil:
             if held_structure == "":
                 held_structure = Template(ddl[3]).substitute(clname=self.quote(clname), 
                     structure=self.params.structure,
-                    partcount=self.quote(self.params.partcount))
+                    partcount=self.params.partcount)
 
         if held_structure != "":
             #held_structure = Template(ddl[3]).substitute(clname=self.quote(clname))

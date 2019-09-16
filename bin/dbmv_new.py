@@ -30,6 +30,7 @@
 ##                          in a prameter file or on the command line.
 ##    bolke01  10-09-19     Added quiet option (default)
 ##    bolke01  10-09-19     Added verbose option (default)
+##    cooda09  16-09-19     Merged in changes for Oracle objects (dmpobj)
 ##
 
 import getopt
@@ -84,7 +85,7 @@ def main():
     setup_logging(default_path=logging_conf_file)
 
     # Program parameters
-    g_pars = ['src=', 'dest=', 'loadata', 'cretab', 'creview', 'creall', 'loaddl', 'loadtest', 'batchsize=', 'maxrows=',
+    g_pars = ['src=', 'dest=', 'loadata', 'cretab', 'creview', 'dmpobj', 'creall', 'loaddl', 'loadtest', 'batchsize=', 'maxrows=',
               'truncate', 'parfile=', 'fdelim=', 'unload', 'translation=', 'quote=', 'cmdsep=', 'charmax=',
               'creindex', 'ownsrc=', 'owntgt=', 'add_drop',
               'on_error=', 'source_schema=', 'target_schema=', 'unsupported=', 'exclude=',
@@ -102,6 +103,8 @@ def main():
                         help="create tables in the @dest from @source schema")
     parser.add_argument('--creview', required=False, action="store_true",
                         help="create views in a @dest from @source schema")
+    parser.add_argument('--dmpobj', required=False, action="store_true",
+                        help="create procedures in a @dest from @source schema")
     parser.add_argument('--creall', required=False, action="store_true",
                         help="create tables, views, constrains in a @dest from @source")
     parser.add_argument('--loaddl', required=False, action="store_true",

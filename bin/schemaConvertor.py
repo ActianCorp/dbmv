@@ -30,8 +30,10 @@
 ##                              Changed print to logger messages to clean up consolen/schemaConvertor.py.
 ##   bolke01    08-09-19       wrap result in format and use a space to replace
 ##                             clname instead of empty string.
-##   bolke01    13-09-19       Updated the processing of MSSQL primary keys to correct 
+##   bolke01    13-09-19       Updated the processing of MSSQL primary keys to correct
 ##                             order of columns
+##   cooda09    16-09-19       Merged in changes for Oracle objects (dmpobj)
+##
 
 
 import codecs
@@ -40,6 +42,7 @@ import time
 import logging
 import warnings
 import xml.dom.minidom
+from datetime import datetime                             
 from string import Template
 from xml.dom.minidom import Node
 
@@ -392,6 +395,160 @@ class ConvertorUtil:
         self.logger.debug("generate_views completed")
         return rls
 
+    def generate_obj_proc(self, source_connector ):
+        """
+            Generate procedure declaration to use in the target DB
+
+            @:param source_connector
+        """
+        self.logger.debug("Running generate_obj_proc processing")
+        target_schema = ""
+        rls = []
+        first_row=0
+
+        sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="ProcDefinition"))
+        sql = sql.safe_substitute(schema_filter=self.params.source_schema)
+
+        cur = source_connector.execute(sql)
+        for line in cur:
+            row = self.strip_row(line)
+            proc_name = row[0].lower()
+            proc_text = row[1].lower()
+            if first_row == 0:
+                first_row = 1
+                rls.append('/* PROCEDURE :'+self.params.source_schema+' : '+proc_name+' : '+str(datetime.now())+ '*/\n')
+
+            if proc_text.lstrip(' ').startswith('end '+ proc_name +';') or proc_text.lstrip(' ').startswith('end;'):
+                ## Split the line and add a comment
+                end_of_proc =('end '+ proc_name +';\n')
+                rls.append(end_of_proc)
+                first_row = 0
+            else:
+                rls.append(proc_text)
+
+        # Write out the details of the procedures found
+        rls.append("\n")
+        self.write_txt_file(self.params.source_schema+'_obj_proc', rls)
+
+        self.logger.debug("generate_obj_proc completed")
+        return 
+
+    def generate_obj_trigger(self, source_connector ):
+        """
+            Generate procedure declaration to use in the target DB
+
+            @:param source_connector
+        """
+        self.logger.debug("Running generate_obj_trigger processing")
+        target_schema = ""
+        rls = []
+        first_row=0
+
+        sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="TriggerDefinition"))
+        sql = sql.safe_substitute(schema_filter=self.params.source_schema)
+
+        cur = source_connector.execute(sql)
+        for line in cur:
+            row = self.strip_row(line)
+            trigger_name = row[0].lower()
+            trigger_text = row[1].lower()
+            if first_row == 0:
+                first_row = 1
+                rls.append('/* TRIGGER :'+self.params.source_schema+' : '+trigger_name+' : '+str(datetime.now())+ '*/\n')
+
+            if trigger_text.lstrip(' ').startswith('end '+ trigger_name +';') or trigger_text.lstrip(' ').startswith('end;'):
+                ## Split the line and add a comment
+                end_of_trigger =('end '+ trigger_name +';\n')
+                rls.append(end_of_trigger)
+                first_row = 0
+            else:
+
+                rls.append(trigger_text)
+
+        # Write out the details of the procedures found
+        rls.append("\n")
+        self.write_txt_file(self.params.source_schema+'_obj_trigger', rls)
+
+        self.logger.debug("generate_obj_trigger completed")
+        return 
+
+    def generate_obj_function(self, source_connector ):
+        """
+            Generate function declaration to use in the target DB
+
+            @:param source_connector
+        """
+        self.logger.debug("Running generate_obj_function processing")
+        target_schema = ""
+        rls = []
+        first_row = 0
+
+        sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="FunctionDefinition"))
+        sql = sql.safe_substitute(schema_filter=self.params.source_schema)
+
+        cur = source_connector.execute(sql)
+        for line in cur:
+            row = self.strip_row(line)
+            function_name = row[0].lower()
+            function_text = row[1].lower()
+            if first_row == 0:
+                first_row = 1
+                rls.append('/* FUNCTION :'+self.params.source_schema+' : '+function_name+' : '+str(datetime.now())+ '*/\n')
+
+            if function_text.lstrip(' ').startswith('end '+ function_name +';') or function_text.lstrip(' ').startswith('end;'):
+                ## Split the line and add a comment
+                end_of_function =('end '+ function_name +';\n')
+                rls.append(end_of_function)
+                first_row = 0
+            else:
+
+                rls.append(function_text)
+
+        # Write out the details of the functions found
+        rls.append("\n")
+        self.write_txt_file(self.params.source_schema+'_obj_function', rls)
+
+        self.logger.debug("generate_obj_function completed")
+        return 
+
+    def generate_obj_package(self, source_connector ):
+        """
+            Generate package declaration to use in the target DB
+
+            @:param source_connector
+        """
+        self.logger.debug("Running generate_obj_package processing")
+        target_schema = ""
+        rls = []
+        first_row = 0
+
+        sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="PackageDefinition"))
+        sql = sql.safe_substitute(schema_filter=self.params.source_schema)
+
+        cur = source_connector.execute(sql)
+        for line in cur:
+            row = self.strip_row(line)
+            package_name = row[0].lower()
+            package_text = row[1].lower()
+            if first_row == 0:
+                first_row = 1
+                rls.append('/* PACKAGE :'+self.params.source_schema+' : '+package_name+' : '+str(datetime.now())+ '*/\n')
+
+            if package_text.lstrip(' ').startswith('end '+ package_name +';') or package_text.lstrip(' ').startswith('end;'):
+                ## Split the line and add a comment
+                end_of_package =('end '+ package_name +';\n')
+                rls.append(end_of_package)
+                first_row = 0
+            else:
+
+                rls.append(package_text)
+
+        # Write out the details of the procedures found
+        rls.append("\n")
+        self.write_txt_file(self.params.source_schema+'_obj_package', rls)
+
+        self.logger.debug("generate_obj_package completed")
+        return                                                    
     def generate_uk(self, source_connector, target_db_type):
         """
             Generate unique constraints (also inclue PrimaryKeys since a PK is also a unique constraint)
@@ -1244,6 +1401,15 @@ class SchemaConvertor:
                         self.util.load_test(source_connector, target_connector)
                     except Exception as ex:
                         self.util.handle_error(ex)
+                if self.params.dmpobj:
+                    try:
+                        self.util.generate_obj_proc(source_connector) 
+                        self.util.generate_obj_trigger(source_connector) 
+                        self.util.generate_obj_function(source_connector) 
+                        self.util.generate_obj_package(source_connector) 
+
+                    except Exception as ex:
+                        self.util.handle_error(ex)
 
                 if self.params.creall:
                     try:
@@ -1251,7 +1417,14 @@ class SchemaConvertor:
                         ixs = self.util.generate_ix(source_connector, target_connector.dbtype)
                         fks = self.util.generate_fk(source_connector, target_connector.dbtype)
                         views = self.util.generate_views(source_connector, target_connector.dbtype)
+                        self.util.generate_obj_proc(source_connector) 
+                        self.util.generate_obj_trigger(source_connector) 
+                        self.util.generate_obj_function(source_connector) 
+                        self.util.generate_obj_package(source_connector) 
                         self.util.write_txt_file('all', uks+ ixs + fks + views)
+                        """
+                           generate_obj_* procedures write their own seperate files out
+                        """                           
                     except Exception as ex:
                         self.util.handle_error(ex)
 

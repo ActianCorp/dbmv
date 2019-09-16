@@ -47,6 +47,7 @@ class ConversionParameters:
         self.loadata = False
         self.cretab = False
         self.creall = False
+        self.dmpobj = False                           
         self.creview = False
         self.creindex = False
 
@@ -142,6 +143,7 @@ class ConversionParameters:
             elif opt == "--creindex": self.creindex = True
             elif opt == "--add_drop": self.add_drop = True
             elif opt == "--creall": self.creall = True
+            elif opt == "--dmpobj": self.dmpobj = True                                                      
             elif opt == "--creview": self.creview = True
             elif opt == "--unload":
                 # unload and loadtest are exclusive

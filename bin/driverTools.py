@@ -14,6 +14,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+##   bolke01    08-11-19        Added elements for NETEZZA that were found in a new DDL list
 
 
 import re
@@ -105,10 +106,15 @@ errors = {"wrong_db_string": "Wrong format for dbconnect. Given: %s, expected: d
 # Environnement variables
 g_lib = os.path.dirname(__file__)
 ODBCINI = ("%s/../etc/%s.odbc") % (g_lib, __name__)
+ODBCSYSINI = ("%s/../etc/") % (g_lib)
+NZ_ODBC_INI_PATH = ("%s/../etc/%s.odbc") % (g_lib, __name__)
+
 XMLINI = ("%s/../etc/%s.xml") % (g_lib, __name__)
 II_DATE_FORMAT = 'SWEDEN'  # INGRESDATE datatype formated as '2006-12-15 12:30:55'
 
 os.environ['ODBCINI'] = ODBCINI
+os.environ['ODBCSYSINI'] = ODBCSYSINI
+os.environ['NZ_ODBC_INI_PATH'] = NZ_ODBC_INI_PATH
 os.environ['II_DATE_FORMAT'] = II_DATE_FORMAT
 
 
@@ -187,6 +193,11 @@ class dbconnector:
                 driverValue = "{ODBC Driver 13 for SQL Server}"
                 self.db = pyodbc.connect(
                     host=hostname, port=port, database=dbname, user=user, password=pwd, driver=driverValue)
+            if (self.dbtype == "netezza"):
+		driverValue = "{NetezzaSQL}"
+                dsn = self.odbc(hostname, port, dbname)
+                self.db = pyodbc.connect(
+                    host=hostname, port=port, dsn=dsn, user=user, password=pwd, ansi=True, autocommit=True, encoding='utf-16')
             else:
                 dsn = self.odbc(hostname, port, dbname)
                 self.db = pyodbc.connect(
@@ -237,9 +248,12 @@ class dbconnector:
             self.cursor = self.db.cursor()
 
         elif self.dbtype == "netezza":
-            # conn="DRIVER={MySQL ODBC 3.51 Driver}; SERVER=localhost; PORT=3306; DATABASE=mysql; UID=joe;
-            # PASSWORD=bloggs; OPTION=3;SOCKET=/var/run/mysqld/mysqld.sock;"
-            self.cursor = Connect(hostname, user, pwd)
+            dsn = self.odbc(hostname, port, dbname)
+            self.db = pyodbc.connect(
+		 dsn=dsn, user=user, password=pwd, autocommit=True,  ansi=True, encoding='UTF-8')
+            self.cursor = self.db.cursor()
+            self.db.setdecoding(pyodbc.SQL_WCHAR, encoding='utf-16le')
+            self.db.setdecoding(pyodbc.SQL_CHAR, encoding='utf-8')
 
         elif self.dbtype in ["hana"]:
             from hdbcli import dbapi
@@ -286,11 +300,14 @@ class dbconnector:
             # at the beginning
             isSelect = True if pattern.search(p_sql) else False
 
-            # encodedValue = p_sql.encode('ascii', 'replace')
-            encodedValue = p_sql
+            if isSelect and self.dbtype in ["netezza"]:
+                encodedValue = p_sql.encode('ascii', 'replace')
+            else:
+                encodedValue = p_sql;
+            #print encodedValue
             self.cursor.execute(encodedValue)
 
-            if isSelect and self.dbtype in ["db2", "netezza", "teradata", "ingres", "vector", "vectorh", "avalanche", "actianx", "asa", "iq", "hana"]:
+            if isSelect and self.dbtype in ["db2", "teradata", "ingres", "vector", "vectorh", "avalanche", "actianx", "asa", "iq", "hana"]:
                 rows = self.cursor.fetchall()
             else:
                 rows = self.cursor

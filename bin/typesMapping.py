@@ -24,6 +24,7 @@
 ##                              which needs to be made more general. TODO
 ##   bolke01    08-09-19        Added DATE for ms2ii - inline with ANSI SQL
 ##                              DATE maps to ANSIDATE - it potentially shoudl be TIMESTAMP(0) 
+##   bolke01    08-11-19        Added elements for NETEZZA that were found in a new DDL list
 
 
 ## Remaining Pg datatypes:
@@ -139,17 +140,22 @@ _nz2vw = {
     "NUMERIC"          : ("DECIMAL(<PRECISION>,<SCALE>)", "<COLNAME>", "<VALUE>"  ), # 
     "DECIMAL"          : ("DECIMAL(<PRECISION>,<SCALE>)", "<COLNAME>", "<VALUE>"  ),
     "MONEY"            : ("DECIMAL(19,4)"               , "<COLNAME>", "<VALUE>"  ), # NUMERIC(19,4) ?? To check
+    "BYTEINT"          : ("TINYINT"                     , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
     "SMALLINT"         : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # 2 Bytes [-32768:32767]-
     "INT2"             : ("SMALLINT"                    , "<COLNAME>", "<VALUE>"  ), # 2 Bytes [-32768:32767]-
     "BIGINT"           : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
     "INT8"             : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes : -2^63 ;+2^63-1
     "BIGSERIAL"        : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes autoincrement N/A in VW
     "SERIAL8"          : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes autoincrement N/A in VW
+    "OID"              : ("BIGINT"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes autoincrement N/A in VW
     "DOUBLE PRECISION" : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes 
+    "DOUBLE"           : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes 
     "FLOAT8"           : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes 
+    "FLOAT"            : ("FLOAT8"                      , "<COLNAME>", "<VALUE>"  ), # 8 Bytes 
     "FLOAT4"           : ("FLOAT4"                      , "<COLNAME>", "'<VALUE>'"), # 4 bytes                     
     "REAL"             : ("FLOAT4"                      , "<COLNAME>", "'<VALUE>'"), # 4 bytes
     "TIMESTAMP"        : ("TIMESTAMP"                   , "<COLNAME>", "'<VALUE>'"), # OR: [0-9] (def: 6) => Add precision VW [max 9]
+    "ABSTIME"          : ("TIMESTAMP"                   , "<COLNAME>", "'<VALUE>'"), # OR: [0-9] (def: 6) => Add precision VW [max 9]
     "TIMESTAMP WITHOUT TIME ZONE" : ("TIMESTAMP"        , "<COLNAME>", "'<VALUE>'"), # 
     "TIMESTAMP WITH TIME ZONE"    : ("TIMESTAMP WITH TIME ZONE", "<COLNAME>", "'<VALUE>'"), # 
     "TIMESTAMPTZ"      : ("TIMESTAMP WITH TIME ZONE"    , "<COLNAME>", "'<VALUE>'"), # 
@@ -159,10 +165,13 @@ _nz2vw = {
     "TIMETZ%"          : ("TIME(<SCALE>) WITH TIME ZONE", "<COLNAME>", "'<VALUE>'"), #
     "INTERVAL"         : ("INTERVAL"                    , "<COLNAME>", "'<VALUE>'"), # To check
     "CHAR"             : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"), #
+    "NCHAR"            : ("NCHAR(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"), #
     "CHARACTER"        : ("CHAR(<PRECISION>)"           , "<COLNAME>", "'<VALUE>'"), #
     "VARCHAR"          : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), #
+    "NVARCHAR"         : ("NVARCHAR(<PRECISION>)"       , "<COLNAME>", "'<VALUE>'"), #
     "CHARACTER VARYING": ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), #
     "TEXT"             : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # 
+    "NAME"             : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # 
     "BYTEA"            : ("VARCHAR(<PRECISION>)"        , "<COLNAME>", "'<VALUE>'"), # N/A in VW / To do something, we convert to VARCHAR
     "ARRAY"            : ("ARRAY(<PRECISION>)"          , "<COLNAME>", "'<VALUE>'"), # N/A in VW / Need to converted to an equivalent table
     "BIT VARYING"      : ("BIT VARYING(<PRECISION>)"    , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
@@ -171,6 +180,8 @@ _nz2vw = {
     "VARBINARY"        : ("VARBINARY(<PRECISION>)"      , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
     "IMAGE"            : ("BLOB"                        , "<COLNAME>", "<VALUE>"  ), # N/A IN VW 
     "BIT"              : ("BOOLEAN"                     , "<COLNAME>", "<VALUE>"  ), # 
+    "REGPROC"          : ("CLOB"                        , "CAST(<COLNAME> AS VARCHAR(8000))", "'<VALUE>'"),
+    "INT2VECTOR"       : ("CLOB"                        , "CAST(<COLNAME> AS VARCHAR(8000))", "'<VALUE>'"),
     "XML"              : ("CLOB"                        , "CAST(<COLNAME> AS VARCHAR(8000))", "'<VALUE>'")
 }
 _nz2ii = {

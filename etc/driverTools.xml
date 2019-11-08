@@ -22,5 +22,67 @@
        ServerDB        = ${dbname}
        ServerNode      = ${hostname}
   </maxdb>
+  <netezza>
+       Driver=/lib64/libnzodbc.so
+       APILevel=1
+       ConnectFunctions=YYN
+       Description=NetezzaODBCdriver
+       DriverODBCVer=03.51
+       DebugLogging=true
+       LogPath=/tmp
+       PreFetch=256
+       Socket=16384
+       Database=${dbname}
+       ServerDB=${dbname}
+       ServerNode=${hostname}
+       servername=<source IP address>
+       Port=5480
+       ShowSystemTables=false
+       LegacySQLTables=false
+       LoginTimeout=0
+       QueryTimeout=0
+       DateFormat=1
+       NumericAsChar=false
+       SQLBitOneZero=false
+       StripCRLF=false
+  </netezza>
+  <vector>
+       Driver          = //home//ingres//GIT//dbmv_may//libiiodbcdriver.1.so
+       Description     = "Actian Vector DATABASE"
+       ServerDB        = ${dbname}
+       Server          = ${hostname}
+       Vendor          = Actian Corporation
+       DriverType      = Ingres
+       Database        = ${dbname} 
+       ServerType      = INGRES
+       PromptUIDPWD     u=
+       WithOption      =
+       RoleName        =
+       RolePWD         =
+       DisableCatUnderscore  = N
+       AllowProcedureUpdate  = N
+       UseSysTables    = N
+       BlankDate       =
+       Date1582        =
+       CatConnect      = N
+       Numeric_overflow= IGNORE
+       SupportIIDECIMAL= N
+       CatSchemaNULL   = N
+       ReadOnly        = N
+       SelectLoops     = N
+       ConvertThreePartNames = N
+       Dbms_password   =
+       Group           =
+       MultibyteFillChar     =
+       IngresDate      = N
+       StringTruncation= N
+       DateAlias       = (unset)
+       HostName        =
+       ListenAddress   =
+       IdentifierDelimiter   = DQUOTE
+       DisableDoubleDash     = N
+       DisableScroll   = N
+       PrefetchRows    = 10000
+  </vector>
 </gamma>
 

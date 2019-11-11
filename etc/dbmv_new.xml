@@ -201,6 +201,33 @@ END  as "tyname",
                )
       ORDER BY 1,2,3,id.column_position
     </select>
+    <select id="ProcDefinition">
+        SELECT name, text 
+        FROM user_source 
+        WHERE type = 'PROCEDURE' 
+        ORDER BY name,line
+    </select>
+
+    <select id="TriggerDefinition">
+        SELECT name, text 
+        FROM user_source 
+        WHERE type = 'TRIGGER' 
+        ORDER BY name,line
+    </select>
+
+    <select id="FunctionDefinition">
+        SELECT name, text 
+        FROM user_source 
+        WHERE type = 'FUNCTION' 
+        ORDER BY name,line
+    </select>
+
+    <select id="PackageDefinition">
+        SELECT name, text 
+        FROM user_source 
+        WHERE type = 'PACKAGE' 
+        ORDER BY name,line
+    </select>
 
     <create id="sch">
     </create>

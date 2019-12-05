@@ -25,6 +25,7 @@
 ##   bolke01    08-09-19        Added DATE for ms2ii - inline with ANSI SQL
 ##                              DATE maps to ANSIDATE - it potentially shoudl be TIMESTAMP(0) 
 ##   bolke01    08-11-19        Added elements for NETEZZA that were found in a new DDL list
+##   cooda09    05-12-19        Updated ms2ii datatype assignments
 
 
 ## Remaining Pg datatypes:
@@ -444,6 +445,7 @@ _ms2ii = {
     "SMALLMONEY"       : ("NUMERIC(10,4)"               , "<COLNAME>", "<VALUE>"  ), # MSSQL : NUMERIC(10,4) 4 bytes
     "TIMESTAMP"        : ("BIGINT"                      , "<COLNAME>", "'<VALUE>'"), # MS = ROWVERSION
     "DATETIME"         : ("TIMESTAMP"                   , "CONVERT(VARCHAR,<COLNAME>,121)", "'<VALUE>'"), # MS: 1999-01-08 04:05:06.xxxx 
+    "DATETIME2"        : ("TIMESTAMP"                   , "CONVERT(VARCHAR,<COLNAME>,121)", "'<VALUE>'"), # MS: 1999-01-08 04:05:06.xxxx 
     "SMALLDATETIME"    : ("TIMESTAMP(0)"                , "CONVERT(VARCHAR,<COLNAME>,120)", "'<VALUE>'"), # MS: 1999-01-08 04:05:00
     "TIME"             : ("TIME"                        , "CONVERT(VARCHAR,<COLNAME>,120)", "'<VALUE>'"), # MS: 1999-01-08 04:05:00
     "DATE"             : ("ANSIDATE"                    , "CONVERT(VARCHAR,<COLNAME>,120)", "'<VALUE>'"), # MS: 1999-01-08

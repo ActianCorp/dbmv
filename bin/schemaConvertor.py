@@ -122,7 +122,18 @@ class ConvertorUtil:
         return result
 
     def write_txt_file(self, file_suffix, data):
+        """
+            At somepoint we may allow the file location to be specified
+        """
         filename = self.params.program_name + '_' + file_suffix + '.txt'
+        with codecs.open(filename, encoding='utf-8', mode='w+') as f:
+            f.writelines(data)
+
+    def write_file(self, file_name, data):
+        """
+            At somepoint we may allow the file location to be specified
+        """
+        filename = file_name 
         with codecs.open(filename, encoding='utf-8', mode='w+') as f:
             f.writelines(data)
 
@@ -395,7 +406,7 @@ class ConvertorUtil:
         self.logger.debug("generate_views completed")
         return rls
 
-    def generate_obj_proc(self, source_connector ):
+    def generate_obj_proc(self, source_connector, target_connector ):
         """
             Generate procedure declaration to use in the target DB
 
@@ -428,12 +439,13 @@ class ConvertorUtil:
 
         # Write out the details of the procedures found
         rls.append("\n")
-        self.write_txt_file(self.params.source_schema+'_obj_proc', rls)
+        
+        self.write_file('dbmv_proc_'+source_connector.dbtype+'_'+target_connector.dbtype+'.sql', rls)
 
         self.logger.debug("generate_obj_proc completed")
         return 
 
-    def generate_obj_trigger(self, source_connector ):
+    def generate_obj_trigger(self, source_connector, target_connector ):
         """
             Generate procedure declaration to use in the target DB
 
@@ -467,12 +479,12 @@ class ConvertorUtil:
 
         # Write out the details of the procedures found
         rls.append("\n")
-        self.write_txt_file(self.params.source_schema+'_obj_trigger', rls)
+        self.write_file('dbmv_trigger_'+source_connector.dbtype+'_'+target_connector.dbtype+'.sql', rls)
 
         self.logger.debug("generate_obj_trigger completed")
         return 
 
-    def generate_obj_function(self, source_connector ):
+    def generate_obj_function(self, source_connector, target_connector ):
         """
             Generate function declaration to use in the target DB
 
@@ -506,12 +518,12 @@ class ConvertorUtil:
 
         # Write out the details of the functions found
         rls.append("\n")
-        self.write_txt_file(self.params.source_schema+'_obj_function', rls)
+        self.write_file('dbmv_function_'+source_connector.dbtype+'_'+target_connector.dbtype+'.sql', rls)
 
         self.logger.debug("generate_obj_function completed")
         return 
 
-    def generate_obj_package(self, source_connector ):
+    def generate_obj_package(self, source_connector, target_connector ):
         """
             Generate package declaration to use in the target DB
 
@@ -545,7 +557,7 @@ class ConvertorUtil:
 
         # Write out the details of the procedures found
         rls.append("\n")
-        self.write_txt_file(self.params.source_schema+'_obj_package', rls)
+        self.write_file('dbmv_package_'+source_connector.dbtype+'_'+target_connector.dbtype+'.sql', rls)
 
         self.logger.debug("generate_obj_package completed")
         return                                                    
@@ -1403,10 +1415,10 @@ class SchemaConvertor:
                         self.util.handle_error(ex)
                 if self.params.dmpobj:
                     try:
-                        self.util.generate_obj_proc(source_connector) 
-                        self.util.generate_obj_trigger(source_connector) 
-                        self.util.generate_obj_function(source_connector) 
-                        self.util.generate_obj_package(source_connector) 
+                        self.util.generate_obj_proc(source_connector, target_connector) 
+                        self.util.generate_obj_trigger(source_connector, target_connector) 
+                        self.util.generate_obj_function(source_connector, target_connector) 
+                        self.util.generate_obj_package(source_connector, target_connector) 
 
                     except Exception as ex:
                         self.util.handle_error(ex)
@@ -1417,10 +1429,10 @@ class SchemaConvertor:
                         ixs = self.util.generate_ix(source_connector, target_connector.dbtype)
                         fks = self.util.generate_fk(source_connector, target_connector.dbtype)
                         views = self.util.generate_views(source_connector, target_connector.dbtype)
-                        self.util.generate_obj_proc(source_connector) 
-                        self.util.generate_obj_trigger(source_connector) 
-                        self.util.generate_obj_function(source_connector) 
-                        self.util.generate_obj_package(source_connector) 
+                        self.util.generate_obj_proc(source_connector, target_connector) 
+                        self.util.generate_obj_trigger(source_connector, target_connector) 
+                        self.util.generate_obj_function(source_connector, target_connector) 
+                        self.util.generate_obj_package(source_connector, target_connector) 
                         self.util.write_txt_file('all', uks+ ixs + fks + views)
                         """
                            generate_obj_* procedures write their own seperate files out

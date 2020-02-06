@@ -33,6 +33,7 @@
 ##   bolke01    13-09-19       Updated the processing of MSSQL primary keys to correct
 ##                             order of columns
 ##   cooda09    16-09-19       Merged in changes for Oracle objects (dmpobj)
+##   cooda09    04-02-20       additional formatting for Oracle objects(dmpobj)
 ##
 
 
@@ -416,6 +417,7 @@ class ConvertorUtil:
         target_schema = ""
         rls = []
         first_row=0
+        proc_cnt=0
 
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="ProcDefinition"))
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
@@ -427,15 +429,22 @@ class ConvertorUtil:
             proc_text = row[1].lower()
             if first_row == 0:
                 first_row = 1
-                rls.append('/* PROCEDURE :'+self.params.source_schema+' : '+proc_name+' : '+str(datetime.now())+ '*/\n')
+                proc_cnt+=1
+                proc_cmnt ='PROCEDURE ('+str(proc_cnt)+') :'+self.params.source_schema+' : '+proc_name+' : '
+                rls.append('/* '+proc_cmnt+str(datetime.now())+'*/\n')
 
             if proc_text.lstrip(' ').startswith('end '+ proc_name +';') or proc_text.lstrip(' ').startswith('end;'):
                 ## Split the line and add a comment
-                end_of_proc =('end '+ proc_name +';\n')
+                end_of_proc =(' end '+ proc_name +';\n')
                 rls.append(end_of_proc)
+                rls.append('/* END OF '+proc_cmnt+str(datetime.now())+'*/\n')
+                rls.append(' \n--/\n')
                 first_row = 0
             else:
-                rls.append(proc_text)
+                if proc_text.lstrip(' ').startswith('procedure '):
+                    rls.append(' CREATE OR REPLACE '+proc_text)
+                else:
+                    rls.append(' '+proc_text)
 
         # Write out the details of the procedures found
         rls.append("\n")
@@ -455,6 +464,7 @@ class ConvertorUtil:
         target_schema = ""
         rls = []
         first_row=0
+        trg_cnt=0
 
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="TriggerDefinition"))
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
@@ -466,16 +476,23 @@ class ConvertorUtil:
             trigger_text = row[1].lower()
             if first_row == 0:
                 first_row = 1
-                rls.append('/* TRIGGER :'+self.params.source_schema+' : '+trigger_name+' : '+str(datetime.now())+ '*/\n')
+                trg_cnt+=1
+                trg_cmnt ='TRIGGER ('+str(trg_cnt)+') :'+self.params.source_schema+' : '+trigger_name+' : '
+                rls.append('/* '+trg_cmnt+str(datetime.now())+ '*/\n')
 
             if trigger_text.lstrip(' ').startswith('end '+ trigger_name +';') or trigger_text.lstrip(' ').startswith('end;'):
                 ## Split the line and add a comment
-                end_of_trigger =('end '+ trigger_name +';\n')
+                end_of_trigger =(' end '+ trigger_name +';\n')
                 rls.append(end_of_trigger)
+                rls.append('/* END OF '+trg_cmnt+str(datetime.now())+ '*/\n')
+                rls.append(' \n--/\n')
                 first_row = 0
             else:
+                if trigger_text.lstrip(' ').startswith('trigger '):
+                    rls.append(' CREATE OR REPLACE '+trigger_text)
+                else:
 
-                rls.append(trigger_text)
+                    rls.append(' '+trigger_text)
 
         # Write out the details of the procedures found
         rls.append("\n")
@@ -494,6 +511,7 @@ class ConvertorUtil:
         target_schema = ""
         rls = []
         first_row = 0
+        func_cnt=0
 
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="FunctionDefinition"))
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
@@ -505,16 +523,23 @@ class ConvertorUtil:
             function_text = row[1].lower()
             if first_row == 0:
                 first_row = 1
-                rls.append('/* FUNCTION :'+self.params.source_schema+' : '+function_name+' : '+str(datetime.now())+ '*/\n')
+                func_cnt+=1
+                func_cmnt='FUNCTION ('+str(func_cnt)+') :'+self.params.source_schema+' : '+function_name+' : '
+                rls.append('/* '+func_cmnt+str(datetime.now())+ '*/\n')
 
             if function_text.lstrip(' ').startswith('end '+ function_name +';') or function_text.lstrip(' ').startswith('end;'):
                 ## Split the line and add a comment
-                end_of_function =('end '+ function_name +';\n')
+                end_of_function =(' end '+ function_name +';\n')
                 rls.append(end_of_function)
+                rls.append('/* END OF '+func_cmnt+str(datetime.now())+ '*/\n')
+                rls.append(' \n--/\n')
                 first_row = 0
             else:
+                if function_text.lstrip(' ').startswith('function '):
+                    rls.append(' CREATE OR REPLACE '+function_text)
+                else:
 
-                rls.append(function_text)
+                    rls.append(' '+function_text)
 
         # Write out the details of the functions found
         rls.append("\n")
@@ -533,6 +558,7 @@ class ConvertorUtil:
         target_schema = ""
         rls = []
         first_row = 0
+        pkg_cnt = 0
 
         sql = Template(self.get_xml_data(dbtype=source_connector.dbtype, sql="select", identifier="PackageDefinition"))
         sql = sql.safe_substitute(schema_filter=self.params.source_schema)
@@ -544,16 +570,23 @@ class ConvertorUtil:
             package_text = row[1].lower()
             if first_row == 0:
                 first_row = 1
-                rls.append('/* PACKAGE :'+self.params.source_schema+' : '+package_name+' : '+str(datetime.now())+ '*/\n')
+                pkg_cnt+=1
+                pkg_cmnt='PACKAGE ('+str(pkg_cnt)+') :'+self.params.source_schema+' : '+package_name+' : '
+                rls.append('/* '+pkg_cmnt+str(datetime.now())+ '*/\n')
 
             if package_text.lstrip(' ').startswith('end '+ package_name +';') or package_text.lstrip(' ').startswith('end;'):
                 ## Split the line and add a comment
-                end_of_package =('end '+ package_name +';\n')
+                end_of_package =(' end '+ package_name +';\n')
                 rls.append(end_of_package)
+                rls.append('/* END OF '+pkg_cmnt+str(datetime.now())+ '*/\n')
+                rls.append(' \n--/\n')
                 first_row = 0
             else:
+                if package_text.lstrip(' ').startswith('package '):
+                    rls.append(' CREATE OR REPLACE '+package_text)
+                else:
 
-                rls.append(package_text)
+                    rls.append(' '+package_text)
 
         # Write out the details of the procedures found
         rls.append("\n")

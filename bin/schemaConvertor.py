@@ -34,6 +34,7 @@
 ##                             order of columns
 ##   cooda09    16-09-19       Merged in changes for Oracle objects (dmpobj)
 ##   cooda09    04-02-20       additional formatting for Oracle objects(dmpobj)
+##   cooda09    20-02-20       include date and tim ein outfile name
 ##
 
 
@@ -54,6 +55,8 @@ import subprocess
 import typesMapping
 from driverTools import dbconnector
 
+log_dtm=datetime.now() # Get the run date and time
+log_dtm_txt=str(log_dtm.strftime("%d_%b_%y_%H%M"))
 
 class Counter(object):
     def __init__(self, value=0):
@@ -126,7 +129,7 @@ class ConvertorUtil:
         """
             At somepoint we may allow the file location to be specified
         """
-        filename = self.params.program_name + '_' + file_suffix + '.txt'
+        filename = self.params.program_name + '_' +log_dtm_txt+'_'+log_dtm_db+'_'+ file_suffix + '.txt'
         with codecs.open(filename, encoding='utf-8', mode='w+') as f:
             f.writelines(data)
 
@@ -449,7 +452,7 @@ class ConvertorUtil:
         # Write out the details of the procedures found
         rls.append("\n")
         
-        self.write_file('dbmv_proc_'+source_connector.dbtype+'_'+target_connector.dbtype+'.sql', rls)
+        self.write_file('dbmv_proc_'+log_dtm_txt+'_'+ log_dtm_db+'.sql', rls)
 
         self.logger.debug("generate_obj_proc completed")
         return 
@@ -496,7 +499,7 @@ class ConvertorUtil:
 
         # Write out the details of the procedures found
         rls.append("\n")
-        self.write_file('dbmv_trigger_'+source_connector.dbtype+'_'+target_connector.dbtype+'.sql', rls)
+        self.write_file('dbmv_trigger_'+log_dtm_txt+'_'+log_dtm_db+'.sql', rls)
 
         self.logger.debug("generate_obj_trigger completed")
         return 
@@ -543,7 +546,7 @@ class ConvertorUtil:
 
         # Write out the details of the functions found
         rls.append("\n")
-        self.write_file('dbmv_function_'+source_connector.dbtype+'_'+target_connector.dbtype+'.sql', rls)
+        self.write_file('dbmv_function_'+log_dtm_txt+'_'+log_dtm_db+'.sql', rls)
 
         self.logger.debug("generate_obj_function completed")
         return 
@@ -590,7 +593,7 @@ class ConvertorUtil:
 
         # Write out the details of the procedures found
         rls.append("\n")
-        self.write_file('dbmv_package_'+source_connector.dbtype+'_'+target_connector.dbtype+'.sql', rls)
+        self.write_file('dbmv_package_'+log_dtm_txt+'_'+log_dtm_db+'.sql', rls)
 
         self.logger.debug("generate_obj_package completed")
         return                                                    
@@ -1394,6 +1397,10 @@ class SchemaConvertor:
         with dbconnector(self.params.src) as source_connector:
             connect = self.params.loaddl or self.params.loadata or self.params.loadtest
             with dbconnector(self.params.dest, connect) as target_connector:
+               
+                global log_dtm_db 
+                log_dtm_db=source_connector.dbtype+'_'+target_connector.dbtype
+
                 if self.params.cretab:
                     try:
                         tbs = self.util.generate_tb(source_connector, target_connector.dbtype)

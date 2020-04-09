@@ -30,7 +30,7 @@
 ##                          in a prameter file or on the command line.
 ##    bolke01  10-09-19     Added quiet option (default)
 ##    bolke01  10-09-19     Added verbose option (default)
-##    cooda09  16-09-19     Merged in changes for Oracle objects (dmpobj)
+##    cooda09  31-03-20     Added filetag option 
 ##
 
 import getopt
@@ -44,7 +44,6 @@ import json
 
 from conversionParams import ConversionParameters
 from schemaConvertor import SchemaConvertor
-
 
 class ErrorFilter(logging.Filter):
     """Filters log messages and decides whether to allow and stop ones"""
@@ -85,12 +84,13 @@ def main():
     setup_logging(default_path=logging_conf_file)
 
     # Program parameters
-    g_pars = ['src=', 'dest=', 'loadata', 'cretab', 'creview', 'dmpobj', 'creall', 'loaddl', 'loadtest', 'batchsize=', 'maxrows=',
+    g_pars = ['src=', 'dest=', 'loadata', 'cretab', 'creview', 'dmpobj', 'creall', 'crecmnt', 'loaddl', 
+              'loadtest', 'batchsize=', 'maxrows=',
               'truncate', 'parfile=', 'fdelim=', 'unload', 'translation=', 'quote=', 'cmdsep=', 'charmax=',
               'creindex', 'ownsrc=', 'owntgt=', 'add_drop',
               'on_error=', 'source_schema=', 'target_schema=', 'unsupported=', 'exclude=',
               'include=', 'tables=', 'insertmode=', 'trial', 'loadmethod=', 'threads=', 'mapping', '--help',
-              'partition=', 'structure=', 'pagesize=', 'cpvwl', 'vwload' , 'quiet', 'verbose']
+              'partition=', 'structure=', 'pagesize=', 'cpvwl', 'vwload' , 'quiet', 'verbose', 'filetag=']
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--src', required=False, action="store",
@@ -107,6 +107,8 @@ def main():
                         help="create procedures in a @dest from @source schema")
     parser.add_argument('--creall', required=False, action="store_true",
                         help="create tables, views, constrains in a @dest from @source")
+    parser.add_argument('--crecmnt', required=False, action="store_true",
+                        help="create column comment details in a @dest from @source")
     parser.add_argument('--loaddl', required=False, action="store_true",
                         help="load DDL from @source to @dest")
     parser.add_argument('--loadtest', required=False, action="store_true",
@@ -185,6 +187,8 @@ def main():
                         help="No output to console")
     parser.add_argument('--verbose', required=False, action="store_true",
                         help="Output to console - may cause embedded usage to show errors or warnings.")
+    parser.add_argument('--filetag', required=False, action="store",
+                        help="Filetag to be included in output file name, default is date and time.")
 
     if not sys.argv[1:]:
         # Print usage and exit
@@ -196,15 +200,15 @@ def main():
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], '', g_pars)
-    except getopt.GetoptError, err:
+    except getopt.GetoptError as err:
         print str(err)
         for s in g_pars:
             print s
         sys.exit(2)
 ##
 ##
-    print 'Version 0.9e'
-    print '# Copyright 2018 - 2019 Actian Corporation'
+    print 'Version 0.9f'
+    print '# Copyright 2018 - 2020 Actian Corporation'
 ##
 
     params = ConversionParameters()

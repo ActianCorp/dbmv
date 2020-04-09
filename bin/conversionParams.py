@@ -22,6 +22,7 @@
 ##                               vwload (--vwload) and copy vwload (--cpvwl)
 ##    bolke01    10-09-19        Add quiet option
 ##    bolke01  10-09-19          Added verbose option 
+##    cooda09    31-03-20        Added filetag option 
 
 import multiprocessing
 import re
@@ -47,6 +48,7 @@ class ConversionParameters:
         self.loadata = False
         self.cretab = False
         self.creall = False
+        self.crecmnt = False
         self.dmpobj = False                           
         self.creview = False
         self.creindex = False
@@ -108,6 +110,7 @@ class ConversionParameters:
         self.table_regexp = re.compile(r"^\w+$")
         # regex to match the table.column
         self.table_column_regexp = re.compile(r"^\w+\.\w+$")
+        self.filetag = False
 
     @property
     def bin_dir_path(self):
@@ -143,6 +146,7 @@ class ConversionParameters:
             elif opt == "--creindex": self.creindex = True
             elif opt == "--add_drop": self.add_drop = True
             elif opt == "--creall": self.creall = True
+            elif opt == "--crecmnt": self.crecmnt = True
             elif opt == "--dmpobj": self.dmpobj = True                                                      
             elif opt == "--creview": self.creview = True
             elif opt == "--unload":
@@ -292,6 +296,9 @@ class ConversionParameters:
                     sys.exit(1)
             elif opt == "--cpvwl":self.load_cpvwl = True
             elif opt == "--vwload":self.load_vwload = True
+            elif opt == "--filetag":
+                val = arg.strip().lower()
+                self.filetag = val
             elif opt == "--parfile":
                 fname = arg
                 if fname != "":
@@ -323,6 +330,8 @@ class ConversionParameters:
                                 self.partcount = value
                             elif param == "--pagesize":
                                 self.pagesize = value
+                            elif param == "--filetag":
+                                self.filetag = value
             else:
                 assert False, "unhandled option"
 

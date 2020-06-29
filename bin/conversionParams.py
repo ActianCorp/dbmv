@@ -334,6 +334,15 @@ class ConversionParameters:
                                 self.filetag = value
             else:
                 assert False, "unhandled option"
+        
+        arg_count = len(sys.argv) - 1
+
+        position = 1
+        self.logger.debug("RunTime Parameters supplied")
+
+        while (arg_count >= position):
+            self.logger.debug("%i: %s" % (position,sys.argv[position]))
+            position = position + 1
 
         if self.__is_include_exclude_conflict():
             self.logger.error("--include&--exclude values conflict detected. exit...")

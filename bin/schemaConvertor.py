@@ -1424,6 +1424,7 @@ class SchemaConvertor:
                                 print "%-*s  %-*s" % (32,prt,40,types_mapping[prt])
                             print "\n"
                     except Exception as ex:
+                        self.logger.exception(ex)
                         self.util.handle_error(ex)
 
                 if self.params.creview:
@@ -1431,6 +1432,7 @@ class SchemaConvertor:
                         views = self.util.generate_views(source_connector, target_connector.dbtype)
                         self.util.write_txt_file('viw', views)
                     except Exception as ex:
+                        self.logger.exception(ex)
                         self.util.handle_error(ex)
 
                 if self.params.loaddl and self.params.cretab:
@@ -1441,27 +1443,35 @@ class SchemaConvertor:
                             if not self.params.trial:
                                 target_connector.execute(s)
                         except Exception as ex:
+                            self.logger.exception(ex)
                             self.util.handle_error(ex)
 
                 if self.params.loaddl and self.params.creview:
-                    self.util.create_views(target_connector, views)
+                    try:
+                        self.util.create_views(target_connector, views)
+                    except Exception as ex:
+                        self.logger.exception(ex)
+                        self.util.handle_error(ex)
 
                 if self.params.loadata:
                     try:
                         self.util.load_data(source_connector, target_connector)
                     except Exception as ex:
+                        self.logger.exception(ex)
                         self.util.handle_error(ex)
 
                 if self.params.unload:
                     try:
                         self.util.unload_data(source_connector, target_connector.dbtype)
                     except Exception as ex:
+                        self.logger.exception(ex)
                         self.util.handle_error(ex)
 
                 if self.params.loadtest:
                     try:
                         self.util.load_test(source_connector, target_connector)
                     except Exception as ex:
+                        self.logger.exception(ex)
                         self.util.handle_error(ex)
                 if self.params.dmpobj:
                     try:
@@ -1471,6 +1481,7 @@ class SchemaConvertor:
                         self.util.generate_obj_package(source_connector, target_connector) 
 
                     except Exception as ex:
+                        self.logger.exception(ex)
                         self.util.handle_error(ex)
 
                 if self.params.creall:
@@ -1488,6 +1499,7 @@ class SchemaConvertor:
                            generate_obj_* procedures write their own seperate files out
                         """                           
                     except Exception as ex:
+                        self.logger.exception(ex)
                         self.util.handle_error(ex)
 
                 if self.params.creindex:
@@ -1497,6 +1509,7 @@ class SchemaConvertor:
                         fks = self.util.generate_fk(source_connector, target_connector.dbtype)
                         self.util.write_txt_file('index', uks + ixs + fks)
                     except Exception as ex:
+                        self.logger.exception(ex)
                         self.util.handle_error(ex)
 
                 if self.params.loaddl and self.params.creall:
@@ -1508,6 +1521,7 @@ class SchemaConvertor:
                             if not self.params.trial:
                                 target_connector.execute(s)
                         except Exception as ex:
+                            self.logger.exception(ex)
                             self.util.handle_error(ex)
                     self.util.create_views(target_connector, views)
 
@@ -1520,6 +1534,7 @@ class SchemaConvertor:
                             if not self.params.trial:
                                 target_connector.execute(s)
                         except Exception as ex:
+                            self.logger.exception(ex)
                             self.util.handle_error(ex)
 
                 if not self.params.quiet :
@@ -1538,6 +1553,7 @@ class SchemaConvertor:
                             print subprocess.check_output(['ls','-l', self.params.source_schema + '*'])
 #                            self.util.load_data_vwload(source_connector, target_connector)
                     except Exception as ex:
+                        self.logger.exception(ex)
                         self.util.handle_error(ex)
 
                 if self.params.load_cpvwl:
@@ -1548,6 +1564,7 @@ class SchemaConvertor:
                            print  self.params.source_schema + '*'
 #                        self.util.load_data_vwload(source_connector, target_connector)
                     except Exception as ex:
+                        self.logger.exception(ex)
                         self.util.handle_error(ex)
 
 
